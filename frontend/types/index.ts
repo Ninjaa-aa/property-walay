@@ -5,3 +5,4 @@ export type {
   FooterLinkSection,
   SocialLink,
 } from "./layout/footer";
+export type { Feature, HowItWorksStep } from "./home";
