@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import {
   createDirectionVariants,
   type AnimationDirection,
-} from "./animation-variants";
+} from "@/components/animations/animation-variants";
 
 interface StaggerAnimationProps {
   children: ReactNode;
@@ -25,7 +25,7 @@ export function StaggerContainer({
       className={className}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, margin: "-50px" }}
+      viewport={{ once: true, margin: "-20px" }}
       variants={{
         visible: {
           transition: {

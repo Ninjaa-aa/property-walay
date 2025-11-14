@@ -1,13 +1,14 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { features } from "@/data/home/features";
 import {
   ScrollAnimation,
   StaggerContainer,
   StaggerItem,
-} from "@/components/home/animations";
+  AnimatedGradientText,
+  AnimatedIconContainer,
+} from "@/components/animations";
 
 export function FeaturesSection() {
   return (
@@ -19,9 +20,9 @@ export function FeaturesSection() {
         >
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
             Powerful Features for{" "}
-            <span className="from-primary to-secondary bg-linear-to-r bg-clip-text text-transparent">
+            <AnimatedGradientText as="span">
               Smart Property Search
-            </span>
+            </AnimatedGradientText>
           </h2>
           <p className="text-muted-foreground mt-6 text-lg leading-8">
             Everything you need to find, compare, and invest in properties
@@ -34,27 +35,17 @@ export function FeaturesSection() {
           staggerDelay={0.1}
         >
           {features.map((feature) => {
-            const Icon = feature.icon;
             return (
               <StaggerItem key={feature.title} direction="up">
-                <motion.div
-                  whileHover={{ y: -8 }}
-                  transition={{ duration: 0.3 }}
-                >
+                <div className="transition-all duration-300 hover:-translate-y-2">
                   <Card className="bg-card hover:border-primary/50 group relative h-full overflow-hidden border p-6 transition-all duration-300 hover:shadow-lg">
-                    <motion.div
-                      className="bg-primary/10 text-primary mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg"
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Icon className="h-6 w-6" />
-                    </motion.div>
+                    <AnimatedIconContainer icon={feature.icon} />
                     <h3 className="text-lg font-semibold">{feature.title}</h3>
                     <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                       {feature.description}
                     </p>
                   </Card>
-                </motion.div>
+                </div>
               </StaggerItem>
             );
           })}

@@ -1,13 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { aboutMission, aboutVision } from "@/data/home/about";
 import {
   ScrollAnimation,
   StaggerContainer,
   StaggerItem,
-} from "@/components/home/animations";
+  AnimatedIconContainer,
+} from "@/components/animations";
 
 export function AboutMissionSection() {
   return (
@@ -32,27 +32,17 @@ export function AboutMissionSection() {
           staggerDelay={0.1}
         >
           {aboutMission.values.map((value) => {
-            const Icon = value.icon;
             return (
               <StaggerItem key={value.title} direction="up">
-                <motion.div
-                  whileHover={{ y: -8 }}
-                  transition={{ duration: 0.3 }}
-                >
+                <div className="transition-all duration-300 hover:-translate-y-2">
                   <Card className="bg-card hover:border-primary/50 group relative h-full overflow-hidden border p-6 transition-all duration-300 hover:shadow-lg">
-                    <motion.div
-                      className="bg-primary/10 text-primary mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg"
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Icon className="h-6 w-6" />
-                    </motion.div>
+                    <AnimatedIconContainer icon={value.icon} />
                     <h3 className="text-lg font-semibold">{value.title}</h3>
                     <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                       {value.description}
                     </p>
                   </Card>
-                </motion.div>
+                </div>
               </StaggerItem>
             );
           })}
@@ -75,4 +65,3 @@ export function AboutMissionSection() {
     </section>
   );
 }
-

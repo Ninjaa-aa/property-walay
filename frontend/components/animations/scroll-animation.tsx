@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import {
   createDirectionVariants,
   type AnimationDirection,
-} from "./animation-variants";
+} from "@/components/animations/animation-variants";
 
 interface ScrollAnimationProps {
   children: ReactNode;
@@ -29,7 +29,7 @@ export function ScrollAnimation({
       className={className}
       initial={directionVariants[direction]}
       whileInView={{ y: 0, x: 0, opacity: 1 }}
-      viewport={{ once: true, margin: "-100px" }}
+      viewport={{ once: true, margin: "-50px" }}
       transition={{
         duration,
         delay,

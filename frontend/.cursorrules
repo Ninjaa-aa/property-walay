@@ -312,6 +312,194 @@ import { cn } from "@/lib/utils"
 <Button className={cn("w-full", isLoading && "opacity-50")} />
 ```
 
+## Animations
+
+### CRITICAL: Use Standardized Animation Components
+
+- **NEVER** create custom animations or directly use framer-motion in new components
+- **ALWAYS** use the standardized animation components from `@/components/animations`
+- **ALWAYS** use `useSafeReducedMotion()` hook instead of framer-motion's `useReducedMotion()`
+- All animation components are SSR-safe and handle reduced motion preferences automatically
+
+### Available Animation Components
+
+All animations are exported from `@/components/animations`:
+
+```typescript
+import {
+  FadeIn,
+  ScaleIn,
+  ScrollAnimation,
+  StaggerContainer,
+  StaggerItem,
+  AnimatedBackground,
+  AnimatedBadge,
+  AnimatedCard,
+  AnimatedButtonWrapper,
+  AnimatedGradientText,
+  AnimatedIcon,
+  AnimatedIconContainer,
+  AnimatedStepBadge,
+  AnimatedConnector,
+  ScrollIndicator,
+} from "@/components/animations";
+```
+
+### When to Use Which Animation
+
+**FadeIn** - Simple fade-in animations for text, headings, or any content
+```typescript
+<FadeIn delay={0.3} direction="up" duration={0.8}>
+  <h1>Title</h1>
+</FadeIn>
+```
+
+**ScaleIn** - Scale animations for badges, pills, or small elements
+```typescript
+<ScaleIn delay={0.5} duration={0.4}>
+  <Badge>Feature</Badge>
+</ScaleIn>
+```
+
+**ScrollAnimation** - Scroll-triggered animations for sections
+```typescript
+<ScrollAnimation direction="up" delay={0.2}>
+  <Card>Content</Card>
+</ScrollAnimation>
+```
+
+**StaggerContainer + StaggerItem** - Staggered animations for lists or grids
+```typescript
+<StaggerContainer staggerDelay={0.1}>
+  {items.map((item) => (
+    <StaggerItem key={item.id} direction="up">
+      <Card>{item.content}</Card>
+    </StaggerItem>
+  ))}
+</StaggerContainer>
+```
+
+**AnimatedBackground** - Animated gradient backgrounds for hero sections
+```typescript
+<section className="relative">
+  <AnimatedBackground />
+  <div className="relative z-10">Content</div>
+</section>
+```
+
+**AnimatedBadge** - Badges with icon animations
+```typescript
+<AnimatedBadge icon={Sparkles} delay={0.2}>
+  AI-Powered
+</AnimatedBadge>
+```
+
+**AnimatedCard** - Cards with hover and scroll animations
+```typescript
+<AnimatedCard hoverEffect delay={0.3}>
+  <CardContent>Content</CardContent>
+</AnimatedCard>
+```
+
+**AnimatedButtonWrapper** - Buttons with hover/tap animations
+```typescript
+<AnimatedButtonWrapper>
+  <Button>Click Me</Button>
+</AnimatedButtonWrapper>
+```
+
+**AnimatedGradientText** - Text with animated gradient
+```typescript
+<AnimatedGradientText as="h1">
+  Animated Title
+</AnimatedGradientText>
+```
+
+**ScrollIndicator** - Scroll down indicator for hero sections
+```typescript
+<section className="relative min-h-screen">
+  <Content />
+  <ScrollIndicator delay={1.2} />
+</section>
+```
+
+### Reduced Motion Support
+
+All animation components automatically respect user's reduced motion preferences. If you need to check reduced motion in a custom component:
+
+```typescript
+import { useSafeReducedMotion } from "@/components/animations/use-safe-reduced-motion";
+
+function MyComponent() {
+  const shouldReduceMotion = useSafeReducedMotion();
+  
+  // Use shouldReduceMotion to conditionally disable animations
+  return (
+    <motion.div
+      animate={shouldReduceMotion ? undefined : { scale: 1.1 }}
+    >
+      Content
+    </motion.div>
+  );
+}
+```
+
+### Animation Guidelines
+
+```typescript
+// ✅ Good - Using standardized components
+import { FadeIn, AnimatedCard } from "@/components/animations";
+
+export function FeatureSection() {
+  return (
+    <FadeIn delay={0.3}>
+      <AnimatedCard hoverEffect>
+        <FeatureContent />
+      </AnimatedCard>
+    </FadeIn>
+  );
+}
+
+// ❌ Bad - Creating custom animations
+import { motion } from "framer-motion";
+
+export function FeatureSection() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <FeatureContent />
+    </motion.div>
+  );
+}
+
+// ❌ Bad - Using framer-motion's useReducedMotion directly
+import { useReducedMotion } from "framer-motion";
+
+export function MyComponent() {
+  const shouldReduceMotion = useReducedMotion(); // Causes SSR errors
+  // ...
+}
+```
+
+### Animation Props
+
+Most animation components accept:
+- `delay?: number` - Delay before animation starts (in seconds)
+- `duration?: number` - Animation duration (in seconds)
+- `direction?: "up" | "down" | "left" | "right"` - Animation direction
+- `className?: string` - Additional CSS classes
+
+### Important Notes
+
+- All animation components are client components (marked with `"use client"`)
+- Animations are automatically disabled for users with reduced motion preferences
+- All animations are SSR-safe and won't cause hydration mismatches
+- If you need a new animation pattern, add it to `components/animations/` for reuse
+- Never import framer-motion directly in feature components - use the standardized animations
+
 ## Key Features to Implement
 
 ### 1. Home Page
@@ -553,6 +741,8 @@ export type { Property } from "./property";
 - Extract static data to `data/` folder files
 - Import types from `types/` folder, never define inline
 - Import data from `data/` folder, never hardcode in components
+- **Use standardized animation components from `@/components/animations`**
+- **Use `useSafeReducedMotion()` hook for reduced motion checks**
 - Make components responsive
 - Support dark mode
 - Use Shadcn UI components where available
@@ -569,6 +759,8 @@ export type { Property } from "./property";
 - Use `any` type without justification
 - **Hardcode links, navigation items, or static data in components** (use `data/` folder)
 - **Define types inline in component files** (use `types/` folder)
+- **Create custom animations or use framer-motion directly** (use standardized animation components)
+- **Use framer-motion's `useReducedMotion()` hook directly** (use `useSafeReducedMotion()` instead)
 - Hardcode values (use constants from `lib/constants.ts` or `data/` folder)
 - Forget mobile responsiveness
 - Skip error handling
@@ -592,6 +784,8 @@ Before implementing features, consider:
 4. What are the loading/error/empty states?
 5. Are there any form validations needed?
 6. Does it use existing Shadcn components?
+7. **Which standardized animation component should be used?**
+8. **Does it need reduced motion support?**
 
 ## Pakistani Context
 
