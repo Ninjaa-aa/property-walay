@@ -1,10 +1,14 @@
+import { HeroSection } from "@/components/home/hero-section";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <h1 className="text-4xl font-bold">Property Walay</h1>
-      <ThemeToggle />
-    </main>
+    <>
+      <HeroSection />
+      {/* Additional theme toggle on home page */}
+      <div className="fixed right-4 bottom-4 z-50 md:hidden">
+        <ThemeToggle />
+      </div>
+    </>
   );
 }

@@ -1,0 +1,614 @@
+# PropertyWalay - Cursor AI Rules
+
+## Project Context
+
+You are working on **PropertyWalay**, an AI-powered real estate chatbot platform specifically designed for Pakistan's property market. This is a modern full-stack application solving the fragmented property search problem in Pakistan.
+
+## Project Overview
+
+### Problem Statement
+
+Pakistan's real estate market is fragmented across multiple platforms (Zameen.com, Graana.com, OLX, Facebook groups) with outdated listings, language barriers, and inefficient agent communication.
+
+### Solution
+
+PropertyWalay provides:
+
+- **Real-time property aggregation** from major Pakistani platforms
+- **AI-powered recommendations** using RAG (Retrieval-Augmented Generation)
+- **Multilingual support** (English and Roman Urdu)
+- **Automated property tracking** with price alerts
+- **Agent meeting scheduling** and automation
+- **Investment insights** and trending area analysis
+- **Content generation** (property videos, PowerPoint presentations)
+
+### Target Users
+
+1. **Property Seekers (80%)** - Individuals looking to buy/rent homes, apartments, plots
+2. **Real Estate Agents (15%)** - Licensed dealers managing listings and clients
+3. **Investors (5%)** - Looking for ROI and market trends
+4. **Overseas Pakistanis (20% of seekers)** - Need virtual tours and remote viewing
+
+## Tech Stack
+
+### Frontend (Current Phase)
+
+```
+Framework: Next.js 14 (App Router)
+Language: TypeScript
+Styling: Tailwind CSS
+UI Library: Shadcn UI
+Icons: Lucide React
+Forms: React Hook Form + Zod
+State: Zustand / Context API
+Auth: NextAuth.js
+Animations: Framer Motion
+Theme: next-themes (light/dark mode)
+```
+
+### Backend (Future Integration)
+
+```
+Framework: FastAPI (Python)
+Database: PostgreSQL (Supabase)
+Vector DB: Pinecone/ChromaDB (for RAG)
+Caching: Redis
+Task Queue: Celery
+AI/ML: LangChain, OpenAI API
+```
+
+### Architecture
+
+```
+User → Next.js Frontend
+         ↓
+    FastAPI Backend
+         ↓
+    ┌────┴────┬──────────┬────────┐
+    ↓         ↓          ↓        ↓
+Scrapers   RAG/AI   PostgreSQL  N8N
+```
+
+## Design System
+
+### Colors (HSL format in CSS variables)
+
+```css
+Primary: #10B981 (Green - growth/real estate)
+Secondary: #3B82F6 (Blue - trust)
+Accent: #F59E0B (Amber - highlights)
+Background: #FFFFFF (Light) / #111827 (Dark)
+```
+
+### Typography
+
+```
+Font: Inter (Google Fonts)
+H1: 3rem (48px), font-weight: 700
+H2: 2.25rem (36px), font-weight: 600
+H3: 1.875rem (30px), font-weight: 600
+Body: 1rem (16px)
+```
+
+### Spacing
+
+```
+Base unit: 4px
+Scale: 4, 8, 12, 16, 24, 32, 48, 64, 96, 128px
+```
+
+### Breakpoints
+
+```
+sm: 640px
+md: 768px
+lg: 1024px
+xl: 1280px
+2xl: 1536px
+```
+
+## Project Structure
+
+```
+propertywalay-frontend/
+├── app/
+│   ├── (auth)/              # Auth routes group
+│   │   ├── login/
+│   │   └── signup/
+│   ├── (marketing)/         # Public routes group
+│   │   ├── page.tsx         # Home
+│   │   └── about/
+│   ├── dashboard/           # Protected routes
+│   │   ├── page.tsx
+│   │   ├── saved-properties/
+│   │   ├── search-history/
+│   │   └── settings/
+│   ├── layout.tsx
+│   ├── globals.css
+│   └── providers.tsx
+├── components/
+│   ├── ui/                  # Shadcn components
+│   ├── layout/
+│   │   ├── header.tsx
+│   │   ├── footer.tsx
+│   │   └── sidebar.tsx
+│   ├── auth/
+│   ├── dashboard/
+│   └── home/
+├── data/                    # Static data, links, and constants
+│   ├── layout/              # Layout-related data
+│   │   ├── navigation.ts   # Navigation links
+│   │   ├── footer-links.ts  # Footer links data
+│   │   └── social-links.ts  # Social media links
+│   ├── property/            # Property-related data
+│   │   └── mock-properties.ts
+│   ├── features.ts          # Feature data
+│   └── mock-data.ts         # General mock data
+├── lib/
+│   ├── utils.ts
+│   ├── validations.ts
+│   └── constants.ts
+├── hooks/
+├── types/                   # TypeScript type definitions
+│   ├── index.ts             # Re-export all types
+│   ├── layout/               # Layout-related types
+│   │   ├── index.ts         # Re-export layout types
+│   │   ├── navigation.ts   # Navigation types
+│   │   └── footer.ts        # Footer types
+│   ├── property/            # Property-related types
+│   │   └── index.ts
+│   ├── user/                # User-related types
+│   │   └── index.ts
+│   └── api/                 # API response types
+│       └── index.ts
+└── public/
+```
+
+## Coding Standards
+
+### TypeScript
+
+- Use explicit types for all props, functions, and variables
+- Prefer interfaces over types for object shapes
+- Use proper type guards and narrowing
+- Avoid `any` - use `unknown` if type is truly unknown
+- **ALWAYS define types in the `types/` folder, never inline**
+- Create separate type files for different domains (property.ts, user.ts, etc.)
+- Re-export types from `types/index.ts` for easy imports
+
+```typescript
+// Good - Types in separate file
+// types/navigation.ts
+export interface NavigationItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+// components/layout/header.tsx
+import type { NavigationItem } from "@/types/navigation";
+import { navigationItems } from "@/data/navigation";
+
+export function Header() {
+  return (
+    <nav>
+      {navigationItems.map((item) => (
+        <Link key={item.href} href={item.href}>{item.name}</Link>
+      ))}
+    </nav>
+  );
+}
+
+// Bad - Inline types and hardcoded data
+export function Header() {
+  const items = [
+    { name: "Home", href: "/" },
+    { name: "About", href: "/about" },
+  ];
+  return <nav>{/* ... */}</nav>;
+}
+```
+
+### React Best Practices
+
+- Use functional components with hooks
+- Prefer Server Components (default in App Router)
+- Only use "use client" when necessary (interactivity, hooks, browser APIs)
+- Extract complex logic into custom hooks
+- Keep components small and focused (single responsibility)
+
+```typescript
+// Server Component (default)
+export default function Page() {
+  return <div>Static content</div>
+}
+
+// Client Component (only when needed)
+"use client"
+export function InteractiveComponent() {
+  const [state, setState] = useState()
+  return <button onClick={() => setState(...)}>Click</button>
+}
+```
+
+### Tailwind CSS
+
+- Use Tailwind utility classes exclusively
+- Group classes logically: layout → spacing → colors → typography → effects
+- Use @apply only for complex repeated patterns
+- Leverage Tailwind's responsive modifiers: `sm:`, `md:`, `lg:`
+- Use dark mode classes: `dark:bg-gray-800`
+
+```typescript
+// Good
+<div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+
+// Avoid
+<div style={{ display: 'flex', padding: '16px' }}>
+```
+
+### Component Structure
+
+```typescript
+"use client" // Only if needed
+
+import { ComponentProps } from "react"
+import { cn } from "@/lib/utils"
+
+// Types/Interfaces
+interface ComponentProps {
+  // ...
+}
+
+// Component
+export function Component({ prop1, prop2 }: ComponentProps) {
+  // Hooks at the top
+  const [state, setState] = useState()
+
+  // Event handlers
+  const handleClick = () => {
+    // ...
+  }
+
+  // Render
+  return (
+    <div className="...">
+      {/* JSX */}
+    </div>
+  )
+}
+```
+
+### File Naming
+
+- Components: PascalCase → `PropertyCard.tsx`
+- Utilities: camelCase → `formatPrice.ts`
+- Pages: lowercase with hyphens → `saved-properties/page.tsx`
+- Hooks: camelCase with "use" prefix → `useAuth.ts`
+- Types: camelCase → `property.ts`, `user.ts`
+- Data: camelCase → `navigation.ts`, `footer-links.ts`
+
+## Shadcn UI Usage
+
+### Available Components
+
+button, card, input, label, toast, dropdown-menu, avatar, dialog, tabs, switch, select, checkbox, radio-group, badge, separator, form
+
+### Import Pattern
+
+```typescript
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+```
+
+### Customization
+
+- Extend in component file, don't modify ui/ folder directly
+- Use `cn()` utility for conditional classes
+
+```typescript
+import { cn } from "@/lib/utils"
+
+<Button className={cn("w-full", isLoading && "opacity-50")} />
+```
+
+## Key Features to Implement
+
+### 1. Home Page
+
+- Hero section with gradient background
+- Features grid (6 features)
+- How it works (3 steps)
+- Stats section (4 metrics)
+- CTA section
+- Footer
+
+### 2. Authentication
+
+- Login/Signup forms with validation
+- Mock authentication (localStorage for now)
+- Protected route middleware
+- User types: Property Seeker / Real Estate Agent
+
+### 3. Dashboard
+
+- Sidebar navigation
+- Stats cards
+- Saved properties grid
+- Search history list
+- Settings page with tabs
+- Responsive mobile layout
+
+### 4. Property Cards
+
+- Image placeholder
+- Title, location, price
+- Property type badge
+- Beds/baths info
+- Save/unsave functionality
+
+## Mock Data Structure
+
+### Property
+
+```typescript
+interface Property {
+  id: string;
+  title: string;
+  location: string;
+  city: string;
+  price: number;
+  currency: "PKR" | "USD";
+  propertyType: "house" | "apartment" | "plot" | "commercial";
+  size: number;
+  sizeUnit: "marla" | "kanal" | "sqft";
+  beds?: number;
+  baths?: number;
+  images: string[];
+  savedAt?: Date;
+  priceChanged?: boolean;
+}
+```
+
+### User
+
+```typescript
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  userType: "seeker" | "agent";
+  avatar?: string;
+}
+```
+
+## Data Organization
+
+### CRITICAL: Never Hardcode Data or Links
+
+- **NEVER** hardcode navigation links, footer links, social links, or any static data directly in components
+- **ALWAYS** create separate data files in the `data/` folder
+- **ALWAYS** define proper TypeScript types in the `types/` folder
+- Import and use data from these files
+
+### Data File Structure
+
+**IMPORTANT: Use subfolders to organize data and types by domain/feature**
+
+```typescript
+// types/layout/navigation.ts
+import type { LucideIcon } from "lucide-react";
+
+export interface NavigationItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+}
+```
+
+```typescript
+// types/layout/index.ts
+export type { NavigationItem } from "./navigation";
+export type { FooterLink, FooterLinkSection, SocialLink } from "./footer";
+```
+
+```typescript
+// data/layout/navigation.ts
+import type { NavigationItem } from "@/types/layout/navigation";
+import { Home, Search, User } from "lucide-react";
+
+export const navigationItems: NavigationItem[] = [
+  { name: "Home", href: "/", icon: Home },
+  { name: "About", href: "/about", icon: Search },
+  { name: "Dashboard", href: "/dashboard", icon: User },
+];
+```
+
+```typescript
+// components/layout/header.tsx
+import { navigationItems } from "@/data/layout/navigation";
+
+export function Header() {
+  return (
+    <nav>
+      {navigationItems.map((item) => (
+        <Link key={item.href} href={item.href}>
+          <item.icon />
+          {item.name}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+```
+
+### Examples of What to Extract (with subfolder organization)
+
+- Navigation links → `data/layout/navigation.ts`
+- Footer links → `data/layout/footer-links.ts`
+- Social media links → `data/layout/social-links.ts`
+- Feature lists → `data/features.ts` (or `data/home/features.ts`)
+- Stats/metrics → `data/stats.ts` (or `data/home/stats.ts`)
+- Mock properties → `data/property/mock-properties.ts`
+- Form options → `data/forms/form-options.ts`
+- API endpoints → `lib/constants.ts` (or `data/api/endpoints.ts`)
+
+**Subfolder naming convention:**
+
+- Use domain/feature names: `layout/`, `property/`, `user/`, `auth/`, `dashboard/`
+- Keep related data/types together in the same subfolder
+- Create `index.ts` in subfolders for convenient re-exports
+
+### Type Definitions
+
+- Create type files in `types/` subfolders organized by domain/feature
+- Use subfolders: `types/layout/`, `types/property/`, `types/user/`, etc.
+- Use descriptive names: `navigation.ts`, `footer.ts`, `property.ts`
+- Create `index.ts` in each subfolder for re-exports
+- Re-export from `types/index.ts` for convenience
+
+```typescript
+// types/layout/navigation.ts
+export interface NavigationItem { ... }
+
+// types/layout/index.ts
+export type { NavigationItem } from "./navigation";
+export type { FooterLink } from "./footer";
+
+// types/index.ts
+export type { NavigationItem, FooterLink } from "./layout";
+export type { Property } from "./property";
+```
+
+## Common Patterns
+
+### Loading States
+
+```typescript
+{isLoading ? (
+  <div className="flex items-center justify-center p-8">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+  </div>
+) : (
+  <Content />
+)}
+```
+
+### Empty States
+
+```typescript
+{items.length === 0 ? (
+  <div className="text-center py-12">
+    <Icon className="mx-auto h-12 w-12 text-muted-foreground" />
+    <h3 className="mt-4 text-lg font-semibold">No items found</h3>
+    <p className="mt-2 text-sm text-muted-foreground">Get started by...</p>
+    <Button className="mt-4">Action</Button>
+  </div>
+) : (
+  <ItemsList />
+)}
+```
+
+### Responsive Grids
+
+```typescript
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  {items.map(item => <Card key={item.id} />)}
+</div>
+```
+
+## Performance Considerations
+
+- Use Next.js Image component for all images
+- Implement lazy loading for lists
+- Use React.memo for expensive components
+- Debounce search inputs
+- Optimize re-renders with proper key props
+
+## Accessibility
+
+- Use semantic HTML elements
+- Include ARIA labels for icon-only buttons
+- Ensure keyboard navigation works
+- Maintain proper heading hierarchy
+- Add alt text for images
+- Use proper contrast ratios
+
+## Dark Mode
+
+- All components must support both light and dark mode
+- Use Tailwind's `dark:` prefix for dark mode styles
+- Test in both modes before considering complete
+- Use CSS variables from globals.css
+
+```typescript
+<div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+```
+
+## When Generating Code
+
+### Always
+
+- Include proper TypeScript types (defined in `types/` folder)
+- Extract static data to `data/` folder files
+- Import types from `types/` folder, never define inline
+- Import data from `data/` folder, never hardcode in components
+- Make components responsive
+- Support dark mode
+- Use Shadcn UI components where available
+- Follow the file structure above
+- Add comments for complex logic
+- Handle loading and error states
+- Use semantic HTML
+- Separate data, types, and component logic
+
+### Never
+
+- Use inline styles (use Tailwind)
+- Modify files in `components/ui/` (extend instead)
+- Use `any` type without justification
+- **Hardcode links, navigation items, or static data in components** (use `data/` folder)
+- **Define types inline in component files** (use `types/` folder)
+- Hardcode values (use constants from `lib/constants.ts` or `data/` folder)
+- Forget mobile responsiveness
+- Skip error handling
+- Create custom CSS files (use Tailwind)
+- Mix data and component logic (separate concerns)
+
+## Current Phase
+
+**Frontend Development - Phase 1**
+Building: Home, About, Login/Signup, Dashboard pages
+Status: Mock authentication, static data
+Next: Backend integration with FastAPI
+
+## Questions to Ask
+
+Before implementing features, consider:
+
+1. Is this a Server or Client Component?
+2. Does it need dark mode support?
+3. What's the mobile layout?
+4. What are the loading/error/empty states?
+5. Are there any form validations needed?
+6. Does it use existing Shadcn components?
+
+## Pakistani Context
+
+- Support both English and Roman Urdu text
+- Use Pakistani property units (marla, kanal)
+- Default currency: PKR
+- Major cities: Lahore, Karachi, Islamabad, Rawalpindi, Faisalabad
+- Property types common in Pakistan: House, Apartment, Plot, Commercial
+
+## Additional Notes
+
+- This is a student project (FYP) for FAST NUCES
+- Focus on clean, professional code
+- Prioritize user experience and performance
+- Build with scalability in mind (future backend integration)
+- Keep it simple but modern
+
+---
+
+**Remember:** Write code as if you're building a production-ready SaaS product. Quality over speed, but maintain momentum.
