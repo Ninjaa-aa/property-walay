@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, LogIn, Menu, X } from "lucide-react";
+import { Home, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { navigationItems } from "@/data/layout/navigation";
+import { UserMenu } from "@/components/auth/user-menu";
 
 export function Header() {
   const pathname = usePathname();
@@ -49,17 +50,9 @@ export function Header() {
           <div className="flex items-center gap-4">
             <ThemeToggle />
 
-            {/* Desktop Auth Buttons */}
-            <div className="hidden items-center gap-2 md:flex">
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/login">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Login
-                </Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href="/signup">Sign Up</Link>
-              </Button>
+            {/* Desktop Auth */}
+            <div className="hidden md:flex">
+              <UserMenu />
             </div>
 
             {/* Mobile Menu Button */}
@@ -105,21 +98,9 @@ export function Header() {
                 );
               })}
               <div className="flex flex-col gap-2 border-t pt-4">
-                <Button
-                  asChild
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Login
-                  </Link>
-                </Button>
-                <Button asChild className="w-full justify-start">
-                  <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
-                    Sign Up
-                  </Link>
-                </Button>
+                <div onClick={() => setMobileMenuOpen(false)}>
+                  <UserMenu />
+                </div>
               </div>
             </div>
           </div>
