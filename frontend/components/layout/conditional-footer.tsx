@@ -5,7 +5,9 @@ import { Footer } from "@/components/layout/footer";
 
 export function ConditionalFooter() {
   const pathname = usePathname();
+  const isDashboard = pathname?.startsWith("/dashboard");
   const hideFooter =
+    isDashboard ||
     pathname === "/login" ||
     pathname === "/signup" ||
     pathname === "/reset-password" ||

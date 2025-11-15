@@ -48,7 +48,7 @@ export function LoginForm() {
       }
 
       toast.success("Logged in successfully!");
-      router.push("/");
+      router.push("/dashboard");
       router.refresh();
     } catch {
       toast.error("An unexpected error occurred");

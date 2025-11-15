@@ -6,3 +6,13 @@ export type {
   SocialLink,
 } from "./layout/footer";
 export type { Feature, HowItWorksStep } from "./home";
+export type {
+  DashboardNavigationItem,
+  StatCard,
+  Activity,
+  ActivityType,
+  DashboardProperty,
+  PriceAlert,
+  Meeting,
+} from "./dashboard";
+export type { User, UserType } from "./user";

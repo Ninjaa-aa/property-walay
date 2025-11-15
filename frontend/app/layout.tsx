@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { Header } from "@/components/layout/header";
+import { ConditionalHeader } from "@/components/layout/conditional-header";
 import { ConditionalFooter } from "@/components/layout/conditional-footer";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -38,7 +38,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <div className="flex min-h-screen flex-col">
-            <Header />
+            <ConditionalHeader />
             <main className="flex-1">{children}</main>
             <ConditionalFooter />
           </div>

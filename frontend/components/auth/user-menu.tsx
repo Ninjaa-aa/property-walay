@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -21,15 +21,21 @@ export function UserMenu() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const supabase = createClient();
+
+  // Memoize the supabase client to prevent recreating it on every render
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
+    let mounted = true;
+
     const getUser = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false);
+      if (mounted) {
+        setUser(user);
+        setLoading(false);
+      }
     };
 
     getUser();
@@ -37,11 +43,17 @@ export function UserMenu() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      if (mounted) {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
