@@ -36,6 +36,7 @@ export async function GET(request: Request) {
           first_name: firstName,
           last_name: lastName,
           email: data.user.email || "",
+          role: "Property Seeker", // Default role
         });
       }
     }

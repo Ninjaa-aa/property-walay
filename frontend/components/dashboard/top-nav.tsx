@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,8 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, User, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { SearchBar } from "@/components/dashboard/search-bar";
+import { getUserDisplayInfo } from "@/lib/utils/dashboard";
 
 interface TopNavProps {
   className?: string;
@@ -37,41 +38,10 @@ const pageTitles: Record<string, string> = {
 export function TopNav({ className }: TopNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, profile, loading } = useUserProfile();
   const [unreadNotifications] = useState(3);
 
   const supabase = useMemo(() => createClient(), []);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (mounted) {
-        setUser(user);
-        setLoading(false);
-      }
-    };
-
-    getUser();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -80,10 +50,7 @@ export function TopNav({ className }: TopNavProps) {
   };
 
   const pageTitle = pageTitles[pathname] || "Dashboard";
-  const userInitials =
-    user?.email?.split("@")[0].substring(0, 2).toUpperCase() || "U";
-  const userName =
-    user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
+  const { userInitials, userName } = getUserDisplayInfo(user, profile);
 
   if (loading) {
     return null;
@@ -131,6 +98,9 @@ export function TopNav({ className }: TopNavProps) {
                 className="relative h-9 w-auto gap-2 px-2"
               >
                 <Avatar className="h-8 w-8">
+                  {profile?.avatar && (
+                    <AvatarImage src={profile.avatar} alt={userName} />
+                  )}
                   <AvatarFallback className="bg-primary/10 text-primary text-xs">
                     {userInitials}
                   </AvatarFallback>

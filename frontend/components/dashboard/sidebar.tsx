@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { dashboardNavigationItems } from "@/data/dashboard/navigation";
+import { getUserDisplayInfo } from "@/lib/utils/dashboard";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { LogOut, Menu, X } from "lucide-react";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface SidebarProps {
   className?: string;
@@ -20,41 +21,10 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, profile, loading } = useUserProfile();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (mounted) {
-        setUser(user);
-        setLoading(false);
-      }
-    };
-
-    getUser();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -62,11 +32,10 @@ export function Sidebar({ className }: SidebarProps) {
     router.refresh();
   };
 
-  const userInitials =
-    user?.email?.split("@")[0].substring(0, 2).toUpperCase() || "U";
-  const userName =
-    user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
-  const userRole = "Property Seeker"; // TODO: Get from user profile
+  const { userInitials, userName, userRole } = getUserDisplayInfo(
+    user,
+    profile
+  );
 
   if (loading) {
     return null;
@@ -109,6 +78,9 @@ export function Sidebar({ className }: SidebarProps) {
           <div className="flex h-20 items-center border-b px-5">
             <div className="flex w-full items-center gap-3">
               <Avatar className="h-12 w-12">
+                {profile?.avatar && (
+                  <AvatarImage src={profile.avatar} alt={userName} />
+                )}
                 <AvatarFallback className="bg-primary/10 text-primary">
                   {userInitials}
                 </AvatarFallback>
