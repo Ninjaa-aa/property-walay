@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { AnimatedCard } from "@/components/animations";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
@@ -14,7 +15,15 @@ export function PropertyCard({ property }: PropertyCardProps) {
   return (
     <AnimatedCard hoverEffect>
       <div className="overflow-hidden rounded-lg border">
-        <div className="bg-muted aspect-video w-full" />
+        <div className="bg-muted relative aspect-video w-full overflow-hidden">
+          <Image
+            src={property.image}
+            alt={property.title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        </div>
         <CardContent className="p-4">
           <h3 className="font-semibold">{property.title}</h3>
           <p className="text-muted-foreground mt-1 text-sm">

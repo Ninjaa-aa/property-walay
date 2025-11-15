@@ -6,11 +6,12 @@ import { Separator } from "@/components/ui/separator";
 import { FadeIn } from "@/components/animations";
 import { dashboardStats } from "@/data/dashboard/stats";
 import { dashboardActivities } from "@/data/dashboard/activities";
-import { recommendedProperties } from "@/data/dashboard/properties";
 import { priceAlerts } from "@/data/dashboard/price-alerts";
 import { upcomingMeetings } from "@/data/dashboard/meetings";
 import { formatPrice } from "@/lib/utils/dashboard";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { useRecommendedProperties } from "@/hooks/use-properties";
+import { apiPropertyToDashboard } from "@/lib/utils/property";
 import { StatCard } from "./stat-card";
 import { ActivityItem } from "./activity-item";
 import { PropertyCard } from "./property-card";
@@ -18,7 +19,14 @@ import { Bookmark, Calendar, Bell, Search, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 export function DashboardContent() {
-  const { user, profile, loading } = useUserProfile();
+  const { user, profile, loading: userLoading } = useUserProfile();
+  const {
+    properties: recommendedProps,
+    loading: propertiesLoading,
+    error: propertiesError,
+  } = useRecommendedProperties(3);
+
+  const loading = userLoading || propertiesLoading;
 
   if (loading) {
     return (
@@ -200,9 +208,22 @@ export function DashboardContent() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                {recommendedProperties.map((property) => (
-                  <PropertyCard key={property.id} property={property} />
-                ))}
+                {propertiesError ? (
+                  <div className="text-muted-foreground py-4 text-center text-sm">
+                    Failed to load properties. Please try again later.
+                  </div>
+                ) : recommendedProps.length === 0 ? (
+                  <div className="text-muted-foreground py-4 text-center text-sm">
+                    No recommended properties available.
+                  </div>
+                ) : (
+                  recommendedProps.map((property) => (
+                    <PropertyCard
+                      key={property.our_id}
+                      property={apiPropertyToDashboard(property)}
+                    />
+                  ))
+                )}
               </CardContent>
             </Card>
           </FadeIn>
