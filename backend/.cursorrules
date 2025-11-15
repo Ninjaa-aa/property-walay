@@ -1,0 +1,815 @@
+# PropertyWalay Backend - Cursor AI Rules
+
+## Project Context
+
+You are working on the **PropertyWalay Backend**, a FastAPI-based REST API that powers an AI-driven real estate platform for Pakistan. This backend serves the Next.js frontend and handles property data aggregation, AI-powered recommendations, user management, and real-time notifications.
+
+## Project Overview
+
+### Purpose
+The backend provides:
+- **RESTful API** for property search and management
+- **AI-powered recommendations** using RAG (Retrieval-Augmented Generation)
+- **Real-time property scraping** from Zameen.com, Graana.com, Booking.com
+- **Natural Language Understanding** for English and Roman Urdu queries
+- **User authentication** and authorization
+- **Property tracking** with price change notifications
+- **Meeting scheduling** automation
+- **Investment insights** and market analysis
+
+### Target Users
+- Property Seekers (consumers via frontend)
+- Real Estate Agents (via frontend dashboard)
+- System Administrators
+- External integrations (N8N automation)
+
+## Tech Stack
+
+### Core Framework
+```
+Framework: FastAPI 0.104+
+Language: Python 3.11+
+ASGI Server: Uvicorn
+API Documentation: OpenAPI (Swagger UI)
+```
+
+### Database & Storage
+```
+Primary DB: PostgreSQL (via Supabase)
+ORM: SQLAlchemy 2.0+
+Migrations: Alembic
+Vector DB: ChromaDB / Pinecone
+Caching: Redis
+```
+
+### AI & ML
+```
+LLM: OpenAI GPT-4 / Claude
+Framework: LangChain
+Embeddings: sentence-transformers
+RAG: LangChain + Vector DB
+NLU: Custom + LangChain
+```
+
+### Web Scraping
+```
+Libraries: BeautifulSoup4, Requests
+Dynamic: Playwright
+Data Processing: Pandas
+```
+
+### Background Tasks
+```
+Task Queue: Celery
+Broker: Redis
+Scheduler: Celery Beat
+```
+
+### Authentication & Security
+```
+JWT: python-jose
+Password Hashing: passlib[bcrypt]
+CORS: FastAPI middleware
+Environment: python-dotenv
+```
+
+## Project Structure
+
+```
+propertywalay-backend/
+├── app/
+│   ├── main.py                 # FastAPI app entry point
+│   ├── api/
+│   │   ├── deps.py            # API dependencies (auth, db)
+│   │   └── routes/
+│   │       ├── auth.py        # Authentication endpoints
+│   │       ├── properties.py  # Property CRUD
+│   │       ├── search.py      # Search & recommendations
+│   │       ├── users.py       # User management
+│   │       ├── meetings.py    # Meeting scheduling
+│   │       └── notifications.py
+│   ├── core/
+│   │   ├── config.py          # Settings & environment
+│   │   ├── database.py        # DB connection & session
+│   │   ├── security.py        # JWT & password utils
+│   │   └── celery_app.py      # Celery configuration
+│   ├── models/
+│   │   ├── property.py        # SQLAlchemy models
+│   │   ├── user.py
+│   │   ├── meeting.py
+│   │   └── notification.py
+│   ├── schemas/
+│   │   ├── property.py        # Pydantic schemas (request/response)
+│   │   ├── user.py
+│   │   ├── meeting.py
+│   │   └── token.py
+│   ├── services/
+│   │   ├── ai/
+│   │   │   ├── nlu.py         # Natural Language Understanding
+│   │   │   ├── recommendation.py  # RAG-based recommendations
+│   │   │   └── embeddings.py  # Vector embeddings
+│   │   ├── scraping/
+│   │   │   ├── base.py        # Base scraper class
+│   │   │   ├── zameen.py      # Zameen.com scraper
+│   │   │   ├── graana.py      # Graana.com scraper
+│   │   │   └── booking.py     # Booking.com scraper
+│   │   ├── notifications/
+│   │   │   ├── email.py       # Email service
+│   │   │   └── sms.py         # SMS service
+│   │   └── property_service.py
+│   ├── utils/
+│   │   ├── helpers.py         # Utility functions
+│   │   ├── validators.py      # Custom validators
+│   │   └── constants.py       # Constants
+│   └── tasks/
+│       ├── scraping.py        # Celery tasks for scraping
+│       └── notifications.py   # Background notification tasks
+├── tests/
+│   ├── test_api/
+│   ├── test_services/
+│   └── test_utils/
+├── alembic/
+│   └── versions/              # Database migrations
+├── .env
+├── .gitignore
+├── requirements.txt
+├── pytest.ini
+└── README.md
+```
+
+## Coding Standards
+
+### Python Best Practices
+
+#### 1. Code Style
+- Follow **PEP 8** style guide
+- Use **Black** for automatic formatting (line length: 100)
+- Use **type hints** for all functions and variables
+- Use **docstrings** for all public functions, classes, and modules
+
+```python
+# Good
+from typing import List, Optional
+from datetime import datetime
+
+async def get_properties(
+    *,
+    skip: int = 0,
+    limit: int = 100,
+    city: Optional[str] = None,
+    db: Session
+) -> List[Property]:
+    """
+    Retrieve properties with optional filtering.
+    
+    Args:
+        skip: Number of records to skip
+        limit: Maximum number of records to return
+        city: Optional city filter
+        db: Database session
+        
+    Returns:
+        List of Property objects
+    """
+    query = db.query(Property)
+    if city:
+        query = query.filter(Property.city == city)
+    return query.offset(skip).limit(limit).all()
+
+# Bad
+def get_properties(skip, limit, city, db):
+    query = db.query(Property)
+    if city:
+        query = query.filter(Property.city == city)
+    return query.offset(skip).limit(limit).all()
+```
+
+#### 2. Async/Await
+- Use **async def** for all I/O-bound operations
+- Use **await** for async calls (database, external APIs, file I/O)
+- Use **asyncio.gather()** for concurrent operations
+
+```python
+# Good - Async for I/O operations
+async def fetch_properties_from_sources():
+    zameen_task = fetch_zameen_properties()
+    graana_task = fetch_graana_properties()
+    
+    zameen_data, graana_data = await asyncio.gather(
+        zameen_task,
+        graana_task
+    )
+    return zameen_data + graana_data
+
+# Bad - Synchronous blocking
+def fetch_properties_from_sources():
+    zameen_data = fetch_zameen_properties()
+    graana_data = fetch_graana_properties()
+    return zameen_data + graana_data
+```
+
+#### 3. Error Handling
+- Use **try-except** blocks for error-prone operations
+- Raise **HTTPException** with proper status codes
+- Log all errors with context
+- Return meaningful error messages
+
+```python
+from fastapi import HTTPException, status
+import logging
+
+logger = logging.getLogger(__name__)
+
+async def get_property_by_id(property_id: str, db: Session) -> Property:
+    try:
+        property = db.query(Property).filter(Property.id == property_id).first()
+        
+        if not property:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Property with id {property_id} not found"
+            )
+        
+        return property
+        
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions
+    except Exception as e:
+        logger.error(f"Error fetching property {property_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while fetching the property"
+        )
+```
+
+### FastAPI Patterns
+
+#### 1. Route Structure
+```python
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from typing import List
+
+from app.api import deps
+from app.schemas.property import Property, PropertyCreate
+from app.services import property_service
+
+router = APIRouter()
+
+@router.get("/", response_model=List[Property])
+async def get_properties(
+    skip: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(deps.get_current_user),
+    db: Session = Depends(deps.get_db),
+) -> List[Property]:
+    """
+    Retrieve properties with pagination.
+    """
+    return await property_service.get_properties(
+        db=db,
+        skip=skip,
+        limit=limit
+    )
+
+@router.post("/", response_model=Property, status_code=status.HTTP_201_CREATED)
+async def create_property(
+    *,
+    property_in: PropertyCreate,
+    current_user: User = Depends(deps.get_current_active_admin),
+    db: Session = Depends(deps.get_db),
+) -> Property:
+    """
+    Create new property (Admin only).
+    """
+    return await property_service.create_property(
+        db=db,
+        property_in=property_in
+    )
+```
+
+#### 2. Dependency Injection
+```python
+# app/api/deps.py
+from typing import Generator
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import jwt, JWTError
+from sqlalchemy.orm import Session
+
+from app.core.config import settings
+from app.core.database import SessionLocal
+from app.models.user import User
+
+security = HTTPBearer()
+
+def get_db() -> Generator:
+    """Database session dependency."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+) -> User:
+    """Get current authenticated user."""
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
+        )
+        user_id: str = payload.get("sub")
+        
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials"
+            )
+            
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials"
+        )
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    return user
+
+def get_current_active_admin(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """Require admin role."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    return current_user
+```
+
+### Pydantic Schemas
+
+#### 1. Request/Response Models
+```python
+from pydantic import BaseModel, Field, validator
+from typing import Optional, List
+from datetime import datetime
+from enum import Enum
+
+class PropertyType(str, Enum):
+    HOUSE = "house"
+    APARTMENT = "apartment"
+    PLOT = "plot"
+    COMMERCIAL = "commercial"
+
+class PropertyBase(BaseModel):
+    title: str = Field(..., min_length=5, max_length=200)
+    location: str
+    city: str
+    price: float = Field(..., gt=0)
+    property_type: PropertyType
+    size: float = Field(..., gt=0)
+    beds: Optional[int] = Field(None, ge=0, le=20)
+    baths: Optional[int] = Field(None, ge=0, le=20)
+    
+    @validator("city")
+    def validate_city(cls, v):
+        allowed_cities = ["Lahore", "Karachi", "Islamabad", "Rawalpindi", "Faisalabad"]
+        if v not in allowed_cities:
+            raise ValueError(f"City must be one of {allowed_cities}")
+        return v
+
+class PropertyCreate(PropertyBase):
+    """Schema for creating a property."""
+    pass
+
+class PropertyUpdate(PropertyBase):
+    """Schema for updating a property (all fields optional)."""
+    title: Optional[str] = None
+    location: Optional[str] = None
+    city: Optional[str] = None
+    price: Optional[float] = None
+    property_type: Optional[PropertyType] = None
+    size: Optional[float] = None
+
+class Property(PropertyBase):
+    """Schema for property response."""
+    id: str
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True  # SQLAlchemy 2.0
+```
+
+### SQLAlchemy Models
+
+```python
+from sqlalchemy import Column, String, Float, Integer, DateTime, Enum as SQLEnum, ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
+from datetime import datetime
+import uuid
+
+from app.core.database import Base
+
+class Property(Base):
+    __tablename__ = "properties"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    source = Column(String, nullable=False)  # zameen, graana, booking
+    source_id = Column(String, nullable=False, unique=True)
+    title = Column(String(200), nullable=False, index=True)
+    location = Column(String, nullable=False)
+    city = Column(String, nullable=False, index=True)
+    price = Column(Float, nullable=False, index=True)
+    property_type = Column(String, nullable=False, index=True)
+    size = Column(Float, nullable=False)
+    beds = Column(Integer, nullable=True)
+    baths = Column(Integer, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    saved_by = relationship("SavedProperty", back_populates="property")
+    
+    def __repr__(self):
+        return f"<Property {self.title} in {self.city}>"
+```
+
+### Service Layer Pattern
+
+```python
+# app/services/property_service.py
+from typing import List, Optional
+from sqlalchemy.orm import Session
+from sqlalchemy import or_
+
+from app.models.property import Property
+from app.schemas.property import PropertyCreate, PropertyUpdate
+
+class PropertyService:
+    
+    @staticmethod
+    async def get_properties(
+        db: Session,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        city: Optional[str] = None,
+        min_price: Optional[float] = None,
+        max_price: Optional[float] = None,
+    ) -> List[Property]:
+        """Get properties with filters."""
+        query = db.query(Property)
+        
+        if city:
+            query = query.filter(Property.city == city)
+        if min_price:
+            query = query.filter(Property.price >= min_price)
+        if max_price:
+            query = query.filter(Property.price <= max_price)
+        
+        return query.offset(skip).limit(limit).all()
+    
+    @staticmethod
+    async def get_property_by_id(
+        db: Session,
+        property_id: str
+    ) -> Optional[Property]:
+        """Get property by ID."""
+        return db.query(Property).filter(Property.id == property_id).first()
+    
+    @staticmethod
+    async def create_property(
+        db: Session,
+        property_in: PropertyCreate
+    ) -> Property:
+        """Create new property."""
+        db_property = Property(**property_in.dict())
+        db.add(db_property)
+        db.commit()
+        db.refresh(db_property)
+        return db_property
+    
+    @staticmethod
+    async def search_properties(
+        db: Session,
+        query: str,
+        limit: int = 20
+    ) -> List[Property]:
+        """Full-text search on properties."""
+        return db.query(Property).filter(
+            or_(
+                Property.title.ilike(f"%{query}%"),
+                Property.location.ilike(f"%{query}%")
+            )
+        ).limit(limit).all()
+
+# Use as singleton
+property_service = PropertyService()
+```
+
+## API Response Standards
+
+### Success Response
+```python
+{
+    "data": [...],
+    "message": "Properties retrieved successfully",
+    "status": "success"
+}
+```
+
+### Error Response
+```python
+{
+    "detail": "Property not found",
+    "status": "error"
+}
+```
+
+### Pagination Response
+```python
+{
+    "data": [...],
+    "total": 150,
+    "page": 1,
+    "page_size": 20,
+    "total_pages": 8
+}
+```
+
+## Environment Configuration
+
+```python
+# app/core/config.py
+from pydantic_settings import BaseSettings
+from typing import List
+
+class Settings(BaseSettings):
+    # API
+    API_V1_STR: str = "/api/v1"
+    PROJECT_NAME: str = "PropertyWalay API"
+    
+    # Database
+    DATABASE_URL: str
+    SUPABASE_URL: str
+    SUPABASE_KEY: str
+    
+    # Security
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    
+    # CORS
+    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+    
+    # AI
+    OPENAI_API_KEY: str
+    PINECONE_API_KEY: str = ""
+    
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379"
+    
+    # Email
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+
+settings = Settings()
+```
+
+## Testing Standards
+
+### Unit Tests
+```python
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from app.main import app
+from app.core.database import Base, get_db
+
+# Test database
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def override_get_db():
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+app.dependency_overrides[get_db] = override_get_db
+client = TestClient(app)
+
+@pytest.fixture(scope="module")
+def setup_database():
+    Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
+
+def test_get_properties(setup_database):
+    response = client.get("/api/v1/properties/")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+def test_create_property(setup_database):
+    property_data = {
+        "title": "3 Bed Apartment",
+        "location": "DHA Phase 6",
+        "city": "Lahore",
+        "price": 12000000,
+        "property_type": "apartment",
+        "size": 1200,
+        "beds": 3,
+        "baths": 2
+    }
+    response = client.post("/api/v1/properties/", json=property_data)
+    assert response.status_code == 201
+    assert response.json()["title"] == property_data["title"]
+```
+
+## Logging Standards
+
+```python
+import logging
+from logging.handlers import RotatingFileHandler
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        RotatingFileHandler("app.log", maxBytes=10485760, backupCount=5),
+        logging.StreamHandler()
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+# Usage
+logger.info("Property created successfully")
+logger.warning("Price data missing for property")
+logger.error("Failed to scrape Zameen.com", exc_info=True)
+```
+
+## Performance Best Practices
+
+1. **Database Queries**
+   - Use indexes on frequently queried columns
+   - Use `select_related()` / `joinedload()` to avoid N+1 queries
+   - Implement pagination for large datasets
+   - Use database-level aggregations
+
+2. **Caching**
+   - Cache expensive computations (Redis)
+   - Cache API responses for static data
+   - Implement ETags for conditional requests
+
+3. **Background Tasks**
+   - Use Celery for long-running operations
+   - Implement rate limiting for scrapers
+   - Use connection pooling
+
+## Security Best Practices
+
+1. **Authentication**
+   - Use JWT tokens with expiration
+   - Hash passwords with bcrypt
+   - Implement refresh tokens
+   - Rate limit authentication endpoints
+
+2. **Authorization**
+   - Implement role-based access control (RBAC)
+   - Validate user permissions on every protected endpoint
+   - Use dependency injection for auth checks
+
+3. **Input Validation**
+   - Validate all inputs with Pydantic
+   - Sanitize user inputs
+   - Use parameterized queries (SQLAlchemy handles this)
+   - Implement rate limiting
+
+4. **CORS**
+   - Only allow trusted origins
+   - Don't use wildcard (*) in production
+
+## Pakistani Context
+
+- Support Roman Urdu text in queries
+- Use Pakistani property units (marla, kanal) alongside sqft
+- Default currency: PKR
+- Major cities: Lahore, Karachi, Islamabad, Rawalpindi, Faisalabad
+- Handle Pakistani phone numbers: +92 format
+
+## Common Patterns
+
+### API Endpoint Template
+```python
+@router.get("/{item_id}", response_model=ItemSchema)
+async def get_item(
+    item_id: str,
+    current_user: User = Depends(deps.get_current_user),
+    db: Session = Depends(deps.get_db),
+) -> ItemSchema:
+    """
+    Get item by ID.
+    
+    - **item_id**: UUID of the item
+    - **Returns**: Item details
+    """
+    item = await item_service.get_by_id(db=db, item_id=item_id)
+    
+    if not item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
+        )
+    
+    return item
+```
+
+### Background Task Pattern
+```python
+from celery import Celery
+
+celery_app = Celery(
+    "propertywalay",
+    broker=settings.REDIS_URL,
+    backend=settings.REDIS_URL
+)
+
+@celery_app.task
+def scrape_properties_task():
+    """Background task to scrape properties."""
+    # Scraping logic
+    pass
+
+# Trigger task
+scrape_properties_task.delay()
+```
+
+## When Generating Code
+
+### Always:
+- Include type hints
+- Add docstrings
+- Handle errors properly
+- Use async/await for I/O
+- Validate inputs with Pydantic
+- Log important operations
+- Follow the service layer pattern
+- Use dependency injection
+- Write tests for new endpoints
+- Use meaningful variable names
+
+### Never:
+- Use `any` type without justification
+- Make synchronous blocking calls
+- Store secrets in code
+- Skip input validation
+- Ignore error handling
+- Use SQL string concatenation
+- Commit sensitive data to git
+- Skip database migrations
+
+## Documentation
+
+- Document all API endpoints with OpenAPI
+- Add examples to schema fields
+- Write clear docstrings
+- Maintain README with setup instructions
+- Document environment variables
+
+## Remember
+
+This is a **production-grade API** for a real estate platform. Write clean, maintainable, secure, and well-tested code. Follow Python and FastAPI best practices consistently.
+
+---
+
+**Prepared for:** PropertyWalay Backend Development  
+**Framework:** FastAPI + Python 3.11+  
+**Focus:** Clean Architecture, Best Practices, Security
