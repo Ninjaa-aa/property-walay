@@ -15,10 +15,10 @@ import {
 
 export function HeroSection() {
   return (
-    <section className="from-primary/10 via-background to-secondary/10 dark:from-primary/5 dark:via-background dark:to-secondary/5 relative flex min-h-[90vh] items-center justify-center overflow-hidden bg-linear-to-br">
+    <section className="from-primary/10 via-background to-secondary/10 dark:from-primary/5 dark:via-background dark:to-secondary/5 relative flex min-h-screen items-start justify-center overflow-hidden bg-linear-to-br">
       <AnimatedBackground />
 
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 container mx-auto px-4 pt-20 sm:px-6 sm:pt-24 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-8 text-center">
           {/* Badge */}
           <AnimatedBadge icon={Sparkles} delay={0.2}>
