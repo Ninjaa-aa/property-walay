@@ -8,15 +8,22 @@ import type { DashboardProperty } from "@/types/dashboard/property";
 
 /**
  * Clean and validate image URL
+ * Exported so it can be used in components that need to clean image arrays
  */
-function cleanImageUrl(url: string): string {
-  // Remove @ prefix if present
-  let cleanedUrl = url.trim();
-  if (cleanedUrl.startsWith("@")) {
-    cleanedUrl = cleanedUrl.slice(1);
+export function cleanImageUrl(url: string): string {
+  if (!url || typeof url !== "string") {
+    return "/placeholder-property.jpg";
   }
 
-  // Validate URL format
+  // Remove @ prefix if present (can appear at start or after whitespace)
+  let cleanedUrl = url.trim();
+
+  // Remove @ prefix - handle multiple @ symbols
+  while (cleanedUrl.startsWith("@")) {
+    cleanedUrl = cleanedUrl.slice(1).trim();
+  }
+
+  // Validate URL format - must be absolute URL or relative path
   if (cleanedUrl.startsWith("http://") || cleanedUrl.startsWith("https://")) {
     return cleanedUrl;
   }
@@ -31,27 +38,52 @@ function cleanImageUrl(url: string): string {
 }
 
 /**
- * Get first image URL from property images
+ * Get all cleaned image URLs from property images array
+ * Handles both string arrays and object arrays, removes @ prefix, validates URLs
  */
-export function getPropertyImage(property: ApiProperty): string {
-  if (!property.images || property.images.length === 0) {
-    return "/placeholder-property.jpg";
+export function getCleanedImages(images: ApiProperty["images"]): string[] {
+  if (!images || !Array.isArray(images) || images.length === 0) {
+    return [];
   }
 
-  const firstImage = property.images[0];
+  const cleanedUrls: string[] = [];
 
-  if (typeof firstImage === "string") {
-    return cleanImageUrl(firstImage);
-  }
+  for (const img of images) {
+    let urlToClean: string | null = null;
 
-  if (typeof firstImage === "object" && firstImage !== null) {
-    const url = (firstImage as { url?: string }).url;
-    if (url && typeof url === "string") {
-      return cleanImageUrl(url);
+    // Handle string images
+    if (typeof img === "string") {
+      urlToClean = img;
+    }
+    // Handle object images (with url property)
+    else if (typeof img === "object" && img !== null) {
+      const urlObj = img as { url?: string | unknown };
+      if (urlObj.url && typeof urlObj.url === "string") {
+        urlToClean = urlObj.url;
+      }
+    }
+
+    // Clean and validate the URL
+    if (urlToClean) {
+      const cleaned = cleanImageUrl(urlToClean);
+      // Only add valid (non-placeholder) URLs
+      if (cleaned !== "/placeholder-property.jpg") {
+        cleanedUrls.push(cleaned);
+      }
     }
   }
 
-  return "/placeholder-property.jpg";
+  return cleanedUrls;
+}
+
+/**
+ * Get first image URL from property images
+ */
+export function getPropertyImage(property: ApiProperty): string {
+  const cleanedImages = getCleanedImages(property.images);
+  return cleanedImages.length > 0
+    ? cleanedImages[0]
+    : "/placeholder-property.jpg";
 }
 
 /**

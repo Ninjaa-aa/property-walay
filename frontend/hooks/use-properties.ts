@@ -31,6 +31,7 @@ export function useProperties(
   const [totalPages, setTotalPages] = useState(0);
   const fetchingRef = useRef(false);
   const paramsRef = useRef(params);
+  const prevParamsStringRef = useRef<string>("");
 
   const fetchProperties = useCallback(async () => {
     // Prevent duplicate requests
@@ -66,8 +67,13 @@ export function useProperties(
 
   // Refetch when params change
   useEffect(() => {
-    paramsRef.current = params;
-    if (!fetchingRef.current) {
+    const currentParamsString = JSON.stringify(params);
+
+    // Only fetch if params actually changed
+    if (currentParamsString !== prevParamsStringRef.current) {
+      paramsRef.current = params;
+      prevParamsStringRef.current = currentParamsString;
+      fetchingRef.current = false;
       fetchProperties();
     }
   }, [fetchProperties, params]);
