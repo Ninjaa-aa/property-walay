@@ -100,3 +100,4 @@ export function formatPriceFull(
     return `PKR ${new Intl.NumberFormat("en-PK").format(price)}`;
   }
 }
+

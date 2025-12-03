@@ -217,3 +217,4 @@ Copy URL with query params - filters are preserved in URL.
 - **Tablet (768px - 1024px):** 2 column grid
 - **Desktop (> 1024px):** 3 column grid, side-by-side filters
 
+

@@ -66,3 +66,4 @@ export function formatDetailDate(date: string | Date): string {
   });
 }
 
+

@@ -69,3 +69,4 @@ export function getTelLink(phone: string | null | undefined): string | null {
 
   return `tel:${telNumber}`;
 }
+

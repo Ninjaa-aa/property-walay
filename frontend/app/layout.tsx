@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ConditionalHeader } from "@/components/layout/conditional-header";
@@ -38,9 +39,13 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <div className="flex min-h-screen flex-col">
-            <ConditionalHeader />
+            <Suspense fallback={null}>
+              <ConditionalHeader />
+            </Suspense>
             <main className="flex-1">{children}</main>
-            <ConditionalFooter />
+            <Suspense fallback={null}>
+              <ConditionalFooter />
+            </Suspense>
           </div>
           <Toaster />
         </ThemeProvider>

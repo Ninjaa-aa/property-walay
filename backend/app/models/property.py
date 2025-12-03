@@ -58,3 +58,4 @@ class Property(Base):
     def __repr__(self):
         return f"<Property(our_id={self.our_id}, title={self.title}, source={self.source})>"
 
+

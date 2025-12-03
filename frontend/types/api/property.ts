@@ -53,3 +53,4 @@ export interface PropertyListResponse {
   total_pages: number;
 }
 
+

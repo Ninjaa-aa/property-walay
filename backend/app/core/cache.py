@@ -120,3 +120,4 @@ def test_connection() -> bool:
     except redis.RedisError:
         return False
 
+
