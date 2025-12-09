@@ -25,6 +25,7 @@ from app.schemas.ppt.ppt_export import (
     PPTExportStatus as PPTExportStatusSchema,
 )
 from app.services.ppt.ppt_generator import PropertyPPTGenerator, ImageOptimizer
+from app.utils.image_utils import clean_image_url
 from app.core.cache.cache import get_cache_key, get_from_cache, set_cache
 
 logger = logging.getLogger(__name__)
@@ -33,19 +34,28 @@ router = APIRouter(prefix="/ppt-exports", tags=["ppt-exports"])
 
 
 def _extract_image_urls(images: list) -> list[str]:
-    """Extract image URLs from property images field"""
+    """Extract and clean image URLs from property images field."""
     if not images:
         return []
-    
-    urls = []
+
+    urls: list[str] = []
     for img in images:
+        raw = None
         if isinstance(img, str):
-            urls.append(img)
+            raw = img
         elif isinstance(img, dict):
             # Try common keys for image URLs
-            url = img.get("url") or img.get("src") or img.get("image") or img.get("original")
-            if url:
-                urls.append(url)
+            raw = (
+                img.get("url")
+                or img.get("src")
+                or img.get("image")
+                or img.get("original")
+            )
+
+        cleaned = clean_image_url(raw) if raw else None
+        if cleaned:
+            urls.append(cleaned)
+
     return urls
 
 

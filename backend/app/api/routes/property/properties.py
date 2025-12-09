@@ -36,7 +36,8 @@ def list_properties(
     area_name: Optional[str] = Query(None),
     min_area_size: Optional[float] = Query(None, ge=0),
     max_area_size: Optional[float] = Query(None, ge=0),
-    page: int = Query(1, ge=1),
+    page: int = Query(1, ge=1
+                      ),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_database),
 ):
