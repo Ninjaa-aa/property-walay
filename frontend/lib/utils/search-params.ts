@@ -5,11 +5,13 @@
 import type { PropertyListParams } from "@/types/api/property";
 import { ReadonlyURLSearchParams } from "next/navigation";
 
+type SearchParamsLike = URLSearchParams | ReadonlyURLSearchParams;
+
 /**
  * Parse URL search params into PropertyListParams
  */
 export function parseSearchParams(
-  searchParams: ReadonlyURLSearchParams
+  searchParams: SearchParamsLike
 ): PropertyListParams {
   const params: PropertyListParams = {
     page: parseInt(searchParams.get("page") || "1"),

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 from typing import Optional
 from uuid import UUID
 
@@ -74,7 +74,17 @@ def list_properties(
     if source:
         query = query.filter(Property.source == source)
     if prop_type:
-        query = query.filter(Property.prop_type == prop_type)
+        # Normalize and match common variants (e.g., Homes/Residential, Plot/Plots)
+        normalized_prop_type = prop_type.strip().lower()
+        equivalents = {
+            "commercial": ["commercial"],
+            "homes": ["homes", "residential"],
+            "residential": ["residential", "homes"],
+            "plot": ["plot", "plots"],
+            "plots": ["plot", "plots"],
+        }
+        match_values = equivalents.get(normalized_prop_type, [normalized_prop_type])
+        query = query.filter(func.lower(Property.prop_type).in_(match_values))
     if prop_subtype:
         query = query.filter(Property.prop_subtype == prop_subtype)
     if min_price is not None:
