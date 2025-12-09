@@ -37,9 +37,11 @@ class PropertyPPTGenerator:
     PRIMARY_COLOR = RGBColor(16, 185, 129)  # #10B981 - Green
     SECONDARY_COLOR = RGBColor(59, 130, 246)  # #3B82F6 - Blue
     ACCENT_COLOR = RGBColor(245, 158, 11)  # #F59E0B - Amber
-    TEXT_COLOR = RGBColor(17, 24, 39)  # #111827 - Dark
-    LIGHT_TEXT = RGBColor(107, 114, 128)  # #6B7280 - Gray
+    TEXT_COLOR = RGBColor(255, 255, 255)  # White on dark
+    LIGHT_TEXT = RGBColor(156, 163, 175)  # Muted gray
     WHITE = RGBColor(255, 255, 255)
+    DARK_BG = RGBColor(17, 24, 39)  # Unified dark background
+    CARD_BG = RGBColor(31, 41, 55)  # Card background on dark
     
     # Fonts
     TITLE_FONT = "Segoe UI"
@@ -170,7 +172,7 @@ class PropertyPPTGenerator:
             MSO_SHAPE.RECTANGLE, 0, 0, self.SLIDE_WIDTH, self.SLIDE_HEIGHT
         )
         bg_shape.fill.solid()
-        bg_shape.fill.fore_color.rgb = RGBColor(17, 24, 39)  # Dark background
+        bg_shape.fill.fore_color.rgb = self.DARK_BG  # Unified dark background
         bg_shape.line.fill.background()
         
         # Hero image (if available)
@@ -234,6 +236,14 @@ class PropertyPPTGenerator:
         slide_layout = self.prs.slide_layouts[6]  # Blank
         slide = self.prs.slides.add_slide(slide_layout)
         
+        # Background
+        bg_shape = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, 0, 0, self.SLIDE_WIDTH, self.SLIDE_HEIGHT
+        )
+        bg_shape.fill.solid()
+        bg_shape.fill.fore_color.rgb = self.DARK_BG
+        bg_shape.line.fill.background()
+        
         # Title
         self._add_shape_with_text(
             slide, 0.5, 0.3, 12, 0.8,
@@ -262,14 +272,14 @@ class PropertyPPTGenerator:
             # Stat box
             box = self._add_rounded_rectangle(
                 slide, x, 1.5, box_width, box_height,
-                RGBColor(249, 250, 251)  # Light gray background
+                self.CARD_BG  # Dark card
             )
             
             # Icon and value
             self._add_shape_with_text(
                 slide, x + 0.2, 1.7, box_width - 0.4, 0.5,
                 f"{icon} {value}",
-                font_size=20, bold=True, font_color=self.TEXT_COLOR
+                font_size=20, bold=True, font_color=self.WHITE
             )
             
             # Label
@@ -297,6 +307,14 @@ class PropertyPPTGenerator:
         """Create detailed property information slide"""
         slide_layout = self.prs.slide_layouts[6]
         slide = self.prs.slides.add_slide(slide_layout)
+        
+        # Background
+        bg_shape = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, 0, 0, self.SLIDE_WIDTH, self.SLIDE_HEIGHT
+        )
+        bg_shape.fill.solid()
+        bg_shape.fill.fore_color.rgb = self.DARK_BG
+        bg_shape.line.fill.background()
         
         # Title
         self._add_shape_with_text(
@@ -347,7 +365,7 @@ class PropertyPPTGenerator:
             self._add_shape_with_text(
                 slide, 3.2, y, 3, 0.4,
                 str(value),
-                font_size=14, bold=True, font_color=self.TEXT_COLOR
+                font_size=14, bold=True, font_color=self.WHITE
             )
             y += 0.7
         
@@ -362,7 +380,7 @@ class PropertyPPTGenerator:
             self._add_shape_with_text(
                 slide, 9.7, y, 3, 0.4,
                 str(value),
-                font_size=14, bold=True, font_color=self.TEXT_COLOR
+                font_size=14, bold=True, font_color=self.WHITE
             )
             y += 0.7
         
@@ -379,6 +397,14 @@ class PropertyPPTGenerator:
         """Create image gallery slide"""
         slide_layout = self.prs.slide_layouts[6]
         slide = self.prs.slides.add_slide(slide_layout)
+        
+        # Background
+        bg_shape = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, 0, 0, self.SLIDE_WIDTH, self.SLIDE_HEIGHT
+        )
+        bg_shape.fill.solid()
+        bg_shape.fill.fore_color.rgb = self.DARK_BG
+        bg_shape.line.fill.background()
         
         # Title
         self._add_shape_with_text(
@@ -414,6 +440,14 @@ class PropertyPPTGenerator:
         slide_layout = self.prs.slide_layouts[6]
         slide = self.prs.slides.add_slide(slide_layout)
         
+        # Background
+        bg_shape = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, 0, 0, self.SLIDE_WIDTH, self.SLIDE_HEIGHT
+        )
+        bg_shape.fill.solid()
+        bg_shape.fill.fore_color.rgb = self.DARK_BG
+        bg_shape.line.fill.background()
+        
         # Title
         self._add_shape_with_text(
             slide, 0.5, 0.3, 12, 0.8,
@@ -435,8 +469,8 @@ class PropertyPPTGenerator:
             Inches(0.5), Inches(2), Inches(12.3), Inches(5)
         )
         map_placeholder.fill.solid()
-        map_placeholder.fill.fore_color.rgb = RGBColor(229, 231, 235)  # Gray
-        map_placeholder.line.color.rgb = RGBColor(209, 213, 219)
+        map_placeholder.fill.fore_color.rgb = self.CARD_BG
+        map_placeholder.line.color.rgb = RGBColor(55, 65, 81)  # subtle border
         
         # Coordinates text
         lat = property_data.get("latitude")
@@ -446,6 +480,13 @@ class PropertyPPTGenerator:
                 slide, 5, 4, 4, 1,
                 f"Coordinates:\n{lat:.6f}, {lng:.6f}\n\nView on Google Maps",
                 font_size=14, font_color=self.LIGHT_TEXT,
+                alignment=PP_ALIGN.CENTER
+            )
+        else:
+            self._add_shape_with_text(
+                slide, 5, 3.8, 4, 1.4,
+                "Map not available",
+                font_size=16, font_color=self.LIGHT_TEXT,
                 alignment=PP_ALIGN.CENTER
             )
     
@@ -471,8 +512,8 @@ class PropertyPPTGenerator:
         )
         
         # Contact info
-        poc_name = property_data.get("poc_name", "Contact Agent")
-        poc_number = property_data.get("poc_number", "")
+        poc_name = property_data.get("poc_name") or "Contact Agent"
+        poc_number = property_data.get("poc_number") or "Phone not provided"
         
         self._add_shape_with_text(
             slide, 0.5, 3, 12.3, 0.6,
@@ -506,71 +547,87 @@ class PropertyPPTGenerator:
         )
     
     def _get_property_stats(self, property_data: dict) -> List[tuple]:
-        """Get key property stats for overview"""
+        """Get key property stats for overview with sensible fallbacks."""
         stats = []
-        
-        # Bedrooms
+
         beds = property_data.get("beds")
-        if beds is not None:
-            stats.append(("Bedrooms", str(beds), "🛏️"))
-        
-        # Bathrooms
         baths = property_data.get("baths")
-        if baths is not None:
-            stats.append(("Bathrooms", str(baths), "🚿"))
-        
-        # Area
         area_size = property_data.get("area_size")
         area_unit = property_data.get("area_unit", "")
-        if area_size:
-            stats.append(("Area", f"{area_size} {area_unit}", "📐"))
-        
-        # Property Type
         prop_type = property_data.get("prop_type")
+        price = property_data.get("current_price")
+        currency = property_data.get("currency", "PKR")
+        source = property_data.get("source")
+
+        if beds is not None:
+            stats.append(("Bedrooms", str(beds), "🛏️"))
+
+        if baths is not None:
+            stats.append(("Bathrooms", str(baths), "🚿"))
+
+        if area_size:
+            stats.append(("Area", f"{area_size} {area_unit}".strip(), "📐"))
+
         if prop_type:
             stats.append(("Type", prop_type.capitalize(), "🏠"))
-        
-        # Ensure we have at least 4 stats
+
+        # Fallbacks when common fields are missing
+        if price:
+            stats.append(("Price", self._format_price(price, currency), "💰"))
+
+        if source:
+            stats.append(("Source", source.capitalize(), "🔗"))
+
+        # Ensure exactly 4 entries with friendly placeholders
         while len(stats) < 4:
-            stats.append(("", "-", ""))
-            
+            stats.append(("Info", "Not available", "ℹ️"))
+
         return stats[:4]
     
     def _generate_description(self, property_data: dict) -> str:
-        """Generate a property description"""
+        """Generate a property description resilient to missing fields."""
         parts = []
-        
-        prop_type = property_data.get("prop_type", "property")
-        prop_subtype = property_data.get("prop_subtype", "")
+
+        prop_type = property_data.get("prop_type", "property") or "property"
+        prop_subtype = property_data.get("prop_subtype") or ""
+
+        # Insert space in camelCase subtype like residentialPlot -> residential Plot
+        if prop_subtype and prop_subtype != prop_subtype.lower():
+            prop_subtype = "".join(
+                (" " + c if c.isupper() else c) for c in prop_subtype
+            ).strip()
+
         beds = property_data.get("beds")
         baths = property_data.get("baths")
         area_size = property_data.get("area_size")
         area_unit = property_data.get("area_unit", "")
         location = property_data.get("area_name", "")
-        
-        # Build description
-        type_str = f"{prop_subtype} {prop_type}" if prop_subtype else prop_type
+        source = property_data.get("source", "")
+
+        type_str = f"{prop_subtype} {prop_type}".strip() if prop_subtype else prop_type
         parts.append(f"This {type_str.lower()}")
-        
+
         if beds and baths:
             parts.append(f"features {beds} bedroom(s) and {baths} bathroom(s)")
         elif beds:
             parts.append(f"features {beds} bedroom(s)")
-        
+        elif baths:
+            parts.append(f"features {baths} bathroom(s)")
+
         if area_size:
-            parts.append(f"with a total area of {area_size} {area_unit}")
-        
+            parts.append(f"with a total area of {area_size} {area_unit}".strip())
+
         if location:
             parts.append(f"located in {location}")
-        
-        description = " ".join(parts) + "."
-        
-        # Add source info
-        source = property_data.get("source", "")
+
+        description = " ".join(parts).strip()
+        if description and not description.endswith("."):
+            description += "."
+
         if source:
             description += f" Listed on {source.capitalize()}."
-        
-        return description
+
+        return description or "Property details are not available."
     
     def _format_price(self, price: float, currency: str = "PKR") -> str:
         """Format price with currency"""
