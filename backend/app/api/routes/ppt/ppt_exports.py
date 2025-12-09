@@ -25,6 +25,7 @@ from app.schemas.ppt.ppt_export import (
     PPTExportStatus as PPTExportStatusSchema,
 )
 from app.services.ppt.ppt_generator import PropertyPPTGenerator, ImageOptimizer
+from app.services.ppt.scrape_enrich import enrich_property_from_source
 from app.utils.image_utils import clean_image_url
 from app.core.cache.cache import get_cache_key, get_from_cache, set_cache
 
@@ -243,10 +244,27 @@ async def generate_ppt(
         "source_human_id": property_obj.source_human_id,
         "poc_name": property_obj.poc_name,
         "poc_number": property_obj.poc_number,
+        "link": property_obj.link,
+        "scraped_contact": None,
+        "scraped_features": None,
+        "scraped_amenities": None,
     }
     
     # Extract image URLs
     image_urls = _extract_image_urls(property_obj.images)
+
+    # Enrich with scraped data when available
+    enrichment = await enrich_property_from_source(property_obj.source, property_obj.link)
+    if enrichment:
+        property_data.update(enrichment)
+        # Fill missing contact fields from scraped contact
+        scraped_contact = enrichment.get("scraped_contact") or {}
+        if not property_data.get("poc_name") and scraped_contact.get("name"):
+            property_data["poc_name"] = scraped_contact["name"]
+        if not property_data.get("poc_number") and scraped_contact.get("phone"):
+            property_data["poc_number"] = scraped_contact["phone"]
+        if not property_data.get("area_name") and scraped_contact.get("address"):
+            property_data["area_name"] = scraped_contact["address"]
     
     # Get database URL for background task
     from app.core.configs.config import settings

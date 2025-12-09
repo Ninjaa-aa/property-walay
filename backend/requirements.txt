@@ -16,6 +16,7 @@ httpx
 python-dateutil
 pandas
 pillow
+beautifulsoup4
 black
 flake8
 pydantic[email]

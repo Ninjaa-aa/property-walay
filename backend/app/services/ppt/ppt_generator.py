@@ -5,9 +5,9 @@ Generates professional PowerPoint presentations for properties using python-pptx
 import io
 import time
 import logging
-from typing import Optional, List, Any
+import math
+from typing import Optional, List
 from datetime import datetime
-from pathlib import Path
 
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -19,10 +19,6 @@ import httpx
 from app.services.ppt import ppt_theme
 
 logger = logging.getLogger(__name__)
-
-# Template path (relative to this file)
-TEMPLATE_DIR = Path(__file__).parent.parent / "templates"
-
 
 class PropertyPPTGenerator:
     """
@@ -74,6 +70,7 @@ class PropertyPPTGenerator:
         self._create_title_slide(property_data, images[0] if images else None)
         self._create_overview_slide(property_data)
         self._create_details_slide(property_data)
+        self._create_features_slide(property_data)
         
         if images and len(images) > 1:
             self._create_gallery_slide(images[1:5])  # Max 4 gallery images
@@ -206,18 +203,18 @@ class PropertyPPTGenerator:
         # Property title
         title = property_data.get("title", "Property Presentation")
         self._add_shape_with_text(
-            slide, 0.5, 2, 5.5, 1.5,
+            slide, 0.5, 1.8, 5.7, 2.0,
             title,
-            font_size=32, font_color=self.WHITE, bold=True
+            font_size=30, font_color=self.WHITE, bold=True
         )
         
         # Location
         location = property_data.get("area_name", "")
         if location:
             self._add_shape_with_text(
-                slide, 0.5, 3.5, 5.5, 0.5,
+                slide, 0.5, 3.8, 5.7, 0.6,
                 f"📍 {location}",
-                font_size=18, font_color=self.PRIMARY_COLOR
+                font_size=18, font_color=self.PRIMARY_COLOR, bold=False
             )
         
         # Price
@@ -388,6 +385,85 @@ class PropertyPPTGenerator:
                 f"Price per {area_unit}: {self._format_price(price_per_unit, currency)}",
                 font_size=14, font_color=self.PRIMARY_COLOR
             )
+
+    def _create_features_slide(self, property_data: dict):
+        """
+        Create features/amenities slide if scraped data is available.
+        """
+        scraped_features = property_data.get("scraped_features") or {}
+        scraped_amenities = property_data.get("scraped_amenities") or {}
+
+        # Build grouped sections
+        sections: list[tuple[str, list[str]]] = []
+
+        for label, items in scraped_features.items():
+            if items:
+                sections.append((f"{label} Features", items))
+
+        for label, items in scraped_amenities.items():
+            if items:
+                sections.append((label, items))
+
+        if not sections:
+            return  # Nothing to render
+
+        # Chunk sections into pages of 2 sections per slide (1x2 layout)
+        per_slide = 2
+        chunks = [sections[i:i + per_slide] for i in range(0, len(sections), per_slide)]
+
+        for chunk in chunks:
+            slide_layout = self.prs.slide_layouts[6]
+            slide = self.prs.slides.add_slide(slide_layout)
+
+            # Dark background for consistency
+            self._apply_background(slide, self.DARK_BG)
+
+            # Title
+            self._add_shape_with_text(
+                slide, 0.5, 0.3, 12, 0.8,
+                "Features & Amenities",
+                font_size=28, bold=True, font_color=self.WHITE
+            )
+
+            # Horizontal line
+            self._add_divider(slide, top_inches=1)
+
+            # Layout: 2 cards stacked vertically, full width
+            x = 0.5
+            col_width = 12.3
+            y_start = 1.3
+            card_height = 2.8
+            gap_y = 0.4
+
+            for i, (title, items) in enumerate(chunk):
+                y = y_start + i * (card_height + gap_y)
+
+                # Card background
+                card = slide.shapes.add_shape(
+                    MSO_SHAPE.ROUNDED_RECTANGLE,
+                    Inches(x),
+                    Inches(y),
+                    Inches(col_width),
+                    Inches(card_height),
+                )
+                card.fill.solid()
+                card.fill.fore_color.rgb = self.CARD_BG
+                card.line.fill.background()
+
+                # Section title
+                self._add_shape_with_text(
+                    slide, x + 0.2, y + 0.2, col_width - 0.4, 0.4,
+                    title,
+                    font_size=16, bold=True, font_color=self.WHITE
+                )
+
+                # Bullet list (cap to 10 items to avoid overflow)
+                bullets_text = "\n".join([f"• {item}" for item in items[:10]])
+                self._add_shape_with_text(
+                    slide, x + 0.2, y + 0.7, col_width - 0.4, card_height - 0.9,
+                    bullets_text,
+                    font_size=12, font_color=self.LIGHT_TEXT
+                )
     
     def _create_gallery_slide(self, images: List[bytes]):
         """Create image gallery slide"""
@@ -449,28 +525,41 @@ class PropertyPPTGenerator:
             font_size=18, font_color=self.PRIMARY_COLOR
         )
         
-        # Map placeholder
-        map_placeholder = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE,
-            Inches(0.5), Inches(2), Inches(12.3), Inches(5)
-        )
-        map_placeholder.fill.solid()
-        map_placeholder.fill.fore_color.rgb = self.CARD_BG
-        map_placeholder.line.color.rgb = RGBColor(55, 65, 81)  # subtle border
-        
-        # Coordinates text
+        # Map or placeholder
         lat = property_data.get("latitude")
         lng = property_data.get("longitude")
+        map_left, map_top = Inches(0.5), Inches(2)
+        map_width, map_height = Inches(12.3), Inches(5)
+
+        map_image = None
         if lat and lng:
-            self._add_shape_with_text(
-                slide, 5, 4, 4, 1,
-                f"Coordinates:\n{lat:.6f}, {lng:.6f}\n\nView on Google Maps",
-                font_size=14, font_color=self.LIGHT_TEXT,
-                alignment=PP_ALIGN.CENTER
+            try:
+                map_image = self._fetch_static_map(lat, lng)
+            except Exception as e:
+                logger.warning(f"Map fetch failed: {e}")
+
+        if map_image:
+            slide.shapes.add_picture(
+                io.BytesIO(map_image),
+                map_left,
+                map_top,
+                width=map_width,
+                height=map_height,
             )
         else:
+            map_placeholder = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                map_left,
+                map_top,
+                map_width,
+                map_height,
+            )
+            map_placeholder.fill.solid()
+            map_placeholder.fill.fore_color.rgb = self.CARD_BG
+            map_placeholder.line.color.rgb = RGBColor(55, 65, 81)  # subtle border
+
             self._add_shape_with_text(
-                slide, 5, 3.8, 4, 1.4,
+                slide, 5, 4, 4, 1,
                 "Map not available",
                 font_size=16, font_color=self.LIGHT_TEXT,
                 alignment=PP_ALIGN.CENTER
@@ -618,6 +707,23 @@ class PropertyPPTGenerator:
             return f"{currency} {price / 100000:.2f} Lac"
         else:
             return f"{currency} {price:,.0f}"
+
+    def _fetch_static_map(self, lat: float, lng: float) -> Optional[bytes]:
+        """
+        Fetch a static map image from OpenStreetMap's staticmap service.
+        Returns image bytes or None on failure.
+        """
+        url = (
+            "https://staticmap.openstreetmap.de/staticmap.php"
+            f"?center={lat},{lng}&zoom=15&size=800x500&markers={lat},{lng},lightblue1"
+        )
+        try:
+            resp = httpx.get(url, timeout=8)
+            resp.raise_for_status()
+            return resp.content
+        except Exception as e:
+            logger.warning(f"Failed to fetch static map: {e}")
+            return None
 
 
 class ImageOptimizer:
