@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { useMapLocations } from "@/hooks/use-trends";
 import {
   Card,
@@ -123,19 +123,6 @@ export function TrendsMap({ category, regionId, cityId }: TrendsMapProps) {
     city_id: cityId,
     category,
   });
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Track mount state to ensure map only renders on client
-  useEffect(() => {
-    // Use setTimeout to avoid synchronous setState in effect
-    const timer = setTimeout(() => {
-      setIsMounted(true);
-    }, 0);
-    return () => {
-      clearTimeout(timer);
-      setIsMounted(false);
-    };
-  }, []);
 
   // Generate a unique key based on props to force map recreation when they change
   const mapKey = `${category}-${regionId ?? "none"}-${cityId ?? "none"}`;
@@ -210,23 +197,6 @@ export function TrendsMap({ category, regionId, cityId }: TrendsMapProps) {
     });
   };
 
-  // Don't render map until component is mounted on client
-  if (!isMounted) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="text-primary h-5 w-5" />
-            Location Map
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-[600px] w-full rounded-lg" />
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -257,7 +227,12 @@ export function TrendsMap({ category, regionId, cityId }: TrendsMapProps) {
               zoom={6}
               className="z-0 h-full w-full"
               scrollWheelZoom={true}
-              style={{ height: "100%", width: "100%", zIndex: 0 }}
+              style={{
+                height: "100%",
+                width: "100%",
+                zIndex: 0,
+                position: "relative",
+              }}
             >
               <MapResizer />
               <TileLayer

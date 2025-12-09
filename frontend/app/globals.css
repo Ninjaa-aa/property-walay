@@ -282,6 +282,42 @@
   @apply text-primary;
 }
 
+/* ===== LEAFLET MAP CONTAINER STYLING ===== */
+.leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+  z-index: 0 !important;
+  position: relative !important;
+}
+
+.leaflet-container .leaflet-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-container .leaflet-tile-pane {
+  z-index: 2 !important;
+}
+
+.leaflet-container .leaflet-overlay-pane {
+  z-index: 3 !important;
+}
+
+.leaflet-container .leaflet-shadow-pane {
+  z-index: 4 !important;
+}
+
+.leaflet-container .leaflet-marker-pane {
+  z-index: 5 !important;
+}
+
+.leaflet-container .leaflet-tooltip-pane {
+  z-index: 6 !important;
+}
+
+.leaflet-container .leaflet-popup-pane {
+  z-index: 7 !important;
+}
+
 /* ===== LEAFLET POPUP STYLING ===== */
 .leaflet-popup-content-wrapper {
   background-color: #ffffff !important;
