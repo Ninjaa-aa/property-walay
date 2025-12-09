@@ -17,6 +17,8 @@ class TrendsRegionBase(BaseModel):
     name: str
     name_urdu: Optional[str] = None
     level: int = 2
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TrendsRegionResponse(TrendsRegionBase):
@@ -71,6 +73,8 @@ class TrendsLocationBase(BaseModel):
     city_id: Optional[int] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TrendsLocationResponse(TrendsLocationBase):

@@ -7,6 +7,7 @@ import {
   TrendingUp,
   Calendar,
   Settings,
+  BarChart3,
 } from "lucide-react";
 
 export const dashboardNavigationItems: DashboardNavigationItem[] = [
@@ -19,6 +20,11 @@ export const dashboardNavigationItems: DashboardNavigationItem[] = [
     name: "Search Properties",
     href: "/dashboard/search",
     icon: Search,
+  },
+  {
+    name: "Market Trends",
+    href: "/dashboard/trends",
+    icon: BarChart3,
   },
   {
     name: "Saved Properties",

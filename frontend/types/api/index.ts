@@ -13,3 +13,22 @@ export type {
   PPTExportActivityResponse,
 } from "./ppt-export";
 
+export type {
+  TrendsRegion,
+  TrendsCity,
+  TrendsLocation,
+  TrendsLocationWithStats,
+  TrendsMonthlyStats,
+  TrendsPositionRanking,
+  TrendsSummary,
+  TopLocation,
+  TopMover,
+  LocationHistory,
+  AnalyticsOverview,
+  LocationComparison,
+  MapLocation,
+  MapCity,
+  TrendsSearchParams,
+  TrendsCategory,
+} from "./trends";
+

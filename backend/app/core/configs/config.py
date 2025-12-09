@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import Optional, Union
 from pydantic import ConfigDict
 
 
@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "PropertyWalay API"
     VERSION: str = "1.0.0"
     
-    # CORS
-    BACKEND_CORS_ORIGINS: list[str] = [
+    # CORS - Can be a list or comma-separated string
+    BACKEND_CORS_ORIGINS: Union[str, list[str]] = [
         "http://localhost:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3000",
