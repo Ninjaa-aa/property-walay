@@ -1,5 +1,3 @@
-from app.models.property.property import Property
-from app.models.ppt.ppt_export import PPTExport
 from app.models.trends.trends import (
     TrendsRegion,
     TrendsCity,
@@ -10,8 +8,6 @@ from app.models.trends.trends import (
 )
 
 __all__ = [
-    "Property",
-    "PPTExport",
     "TrendsRegion",
     "TrendsCity",
     "TrendsLocation",
@@ -19,3 +15,4 @@ __all__ = [
     "TrendsPositionRanking",
     "TrendsMetadata",
 ]
+

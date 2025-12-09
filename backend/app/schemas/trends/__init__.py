@@ -1,0 +1,36 @@
+from app.schemas.trends.trends import (
+    TrendsRegionBase,
+    TrendsRegionResponse,
+    TrendsCityBase,
+    TrendsCityResponse,
+    TrendsCityWithLocations,
+    TrendsLocationBase,
+    TrendsLocationResponse,
+    TrendsLocationWithStats,
+    TrendsMonthlyStatsBase,
+    TrendsMonthlyStatsResponse,
+    TrendsPositionRankingBase,
+    TrendsPositionRankingResponse,
+    TrendsMetadataResponse,
+    TrendsSummaryResponse,
+    TrendsSearchParams,
+)
+
+__all__ = [
+    "TrendsRegionBase",
+    "TrendsRegionResponse",
+    "TrendsCityBase",
+    "TrendsCityResponse",
+    "TrendsCityWithLocations",
+    "TrendsLocationBase",
+    "TrendsLocationResponse",
+    "TrendsLocationWithStats",
+    "TrendsMonthlyStatsBase",
+    "TrendsMonthlyStatsResponse",
+    "TrendsPositionRankingBase",
+    "TrendsPositionRankingResponse",
+    "TrendsMetadataResponse",
+    "TrendsSummaryResponse",
+    "TrendsSearchParams",
+]
+
