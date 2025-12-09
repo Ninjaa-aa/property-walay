@@ -16,6 +16,7 @@ from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 from PIL import Image
 import httpx
+from app.services.ppt import ppt_theme
 
 logger = logging.getLogger(__name__)
 
@@ -33,19 +34,19 @@ class PropertyPPTGenerator:
     SLIDE_WIDTH = Inches(13.333)
     SLIDE_HEIGHT = Inches(7.5)
     
-    # Brand colors
-    PRIMARY_COLOR = RGBColor(16, 185, 129)  # #10B981 - Green
-    SECONDARY_COLOR = RGBColor(59, 130, 246)  # #3B82F6 - Blue
-    ACCENT_COLOR = RGBColor(245, 158, 11)  # #F59E0B - Amber
-    TEXT_COLOR = RGBColor(255, 255, 255)  # White on dark
-    LIGHT_TEXT = RGBColor(156, 163, 175)  # Muted gray
-    WHITE = RGBColor(255, 255, 255)
-    DARK_BG = RGBColor(17, 24, 39)  # Unified dark background
-    CARD_BG = RGBColor(31, 41, 55)  # Card background on dark
+    # Brand colors (imported from shared theme)
+    PRIMARY_COLOR = ppt_theme.PRIMARY_COLOR
+    SECONDARY_COLOR = ppt_theme.SECONDARY_COLOR
+    ACCENT_COLOR = ppt_theme.ACCENT_COLOR
+    TEXT_COLOR = ppt_theme.TEXT_COLOR
+    LIGHT_TEXT = ppt_theme.LIGHT_TEXT
+    WHITE = ppt_theme.WHITE
+    DARK_BG = ppt_theme.DARK_BG
+    CARD_BG = ppt_theme.CARD_BG
     
     # Fonts
-    TITLE_FONT = "Segoe UI"
-    BODY_FONT = "Segoe UI"
+    TITLE_FONT = ppt_theme.TITLE_FONT
+    BODY_FONT = ppt_theme.BODY_FONT
     
     def __init__(self):
         """Initialize the PPT generator"""
@@ -92,6 +93,26 @@ class PropertyPPTGenerator:
         
         return output
     
+    def _apply_background(self, slide, color: RGBColor = None):
+        """Apply a full-bleed background color to a slide."""
+        bg_shape = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, 0, 0, self.SLIDE_WIDTH, self.SLIDE_HEIGHT
+        )
+        bg_shape.fill.solid()
+        bg_shape.fill.fore_color.rgb = color or self.DARK_BG
+        bg_shape.line.fill.background()
+        return bg_shape
+
+    def _add_divider(self, slide, top_inches: float = 1):
+        """Add a horizontal divider line."""
+        line = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, Inches(0.5), Inches(top_inches), Inches(12.3), Inches(0.02)
+        )
+        line.fill.solid()
+        line.fill.fore_color.rgb = self.PRIMARY_COLOR
+        line.line.fill.background()
+        return line
+
     def _add_shape_with_text(
         self,
         slide,
@@ -167,13 +188,8 @@ class PropertyPPTGenerator:
         slide_layout = self.prs.slide_layouts[6]  # Blank layout
         slide = self.prs.slides.add_slide(slide_layout)
         
-        # Background gradient (simulated with shape)
-        bg_shape = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE, 0, 0, self.SLIDE_WIDTH, self.SLIDE_HEIGHT
-        )
-        bg_shape.fill.solid()
-        bg_shape.fill.fore_color.rgb = self.DARK_BG  # Unified dark background
-        bg_shape.line.fill.background()
+        # Background
+        self._apply_background(slide, self.DARK_BG)
         
         # Hero image (if available)
         if hero_image:
@@ -237,12 +253,7 @@ class PropertyPPTGenerator:
         slide = self.prs.slides.add_slide(slide_layout)
         
         # Background
-        bg_shape = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE, 0, 0, self.SLIDE_WIDTH, self.SLIDE_HEIGHT
-        )
-        bg_shape.fill.solid()
-        bg_shape.fill.fore_color.rgb = self.DARK_BG
-        bg_shape.line.fill.background()
+        self._apply_background(slide, self.DARK_BG)
         
         # Title
         self._add_shape_with_text(
@@ -252,12 +263,7 @@ class PropertyPPTGenerator:
         )
         
         # Horizontal line
-        line = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE, Inches(0.5), Inches(1), Inches(12.3), Inches(0.02)
-        )
-        line.fill.solid()
-        line.fill.fore_color.rgb = self.PRIMARY_COLOR
-        line.line.fill.background()
+        self._add_divider(slide, top_inches=1)
         
         # Key stats boxes
         stats = self._get_property_stats(property_data)
@@ -309,12 +315,7 @@ class PropertyPPTGenerator:
         slide = self.prs.slides.add_slide(slide_layout)
         
         # Background
-        bg_shape = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE, 0, 0, self.SLIDE_WIDTH, self.SLIDE_HEIGHT
-        )
-        bg_shape.fill.solid()
-        bg_shape.fill.fore_color.rgb = self.DARK_BG
-        bg_shape.line.fill.background()
+        self._apply_background(slide, self.DARK_BG)
         
         # Title
         self._add_shape_with_text(
@@ -324,12 +325,7 @@ class PropertyPPTGenerator:
         )
         
         # Horizontal line
-        line = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE, Inches(0.5), Inches(1), Inches(12.3), Inches(0.02)
-        )
-        line.fill.solid()
-        line.fill.fore_color.rgb = self.PRIMARY_COLOR
-        line.line.fill.background()
+        self._add_divider(slide, top_inches=1)
         
         # Two columns of details
         details_left = [
@@ -399,12 +395,7 @@ class PropertyPPTGenerator:
         slide = self.prs.slides.add_slide(slide_layout)
         
         # Background
-        bg_shape = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE, 0, 0, self.SLIDE_WIDTH, self.SLIDE_HEIGHT
-        )
-        bg_shape.fill.solid()
-        bg_shape.fill.fore_color.rgb = self.DARK_BG
-        bg_shape.line.fill.background()
+        self._apply_background(slide, self.DARK_BG)
         
         # Title
         self._add_shape_with_text(
@@ -441,12 +432,7 @@ class PropertyPPTGenerator:
         slide = self.prs.slides.add_slide(slide_layout)
         
         # Background
-        bg_shape = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE, 0, 0, self.SLIDE_WIDTH, self.SLIDE_HEIGHT
-        )
-        bg_shape.fill.solid()
-        bg_shape.fill.fore_color.rgb = self.DARK_BG
-        bg_shape.line.fill.background()
+        self._apply_background(slide, self.DARK_BG)
         
         # Title
         self._add_shape_with_text(
@@ -496,12 +482,7 @@ class PropertyPPTGenerator:
         slide = self.prs.slides.add_slide(slide_layout)
         
         # Background
-        bg_shape = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE, 0, 0, self.SLIDE_WIDTH, self.SLIDE_HEIGHT
-        )
-        bg_shape.fill.solid()
-        bg_shape.fill.fore_color.rgb = RGBColor(17, 24, 39)
-        bg_shape.line.fill.background()
+        self._apply_background(slide, self.DARK_BG)
         
         # Title
         self._add_shape_with_text(

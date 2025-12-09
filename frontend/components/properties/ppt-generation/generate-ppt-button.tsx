@@ -39,6 +39,8 @@ export function GeneratePptButton({
   size = "default",
 }: GeneratePptButtonProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  // Snapshot of "now" for recency checks; captured once per component mount
+  const [now] = useState(() => Date.now());
   const { user } = useUserProfile();
   const {
     isGenerating,
@@ -50,7 +52,6 @@ export function GeneratePptButton({
     downloadPpt,
     reset,
   } = usePptExport();
-
   const handleGenerate = async () => {
     if (!user?.id) {
       // Show login prompt or handle unauthenticated state
@@ -102,6 +103,22 @@ export function GeneratePptButton({
     }
   };
 
+  const renderDuration = () => {
+    if (!exportData?.duration_ms) return null;
+    const completedAt = exportData.completed_at
+      ? new Date(exportData.completed_at).getTime()
+      : null;
+    // Consider results fresh only if completed within last 5 minutes
+    const isRecent =
+      completedAt !== null ? now - completedAt < 5 * 60 * 1000 : false;
+
+    if (!isRecent) {
+      return <> • Cached result</>;
+    }
+
+    return <> • Generated in {(exportData.duration_ms / 1000).toFixed(1)}s</>;
+  };
+
   return (
     <>
       <Button
@@ -144,13 +161,7 @@ export function GeneratePptButton({
                   {exportData.file_size
                     ? `${(exportData.file_size / 1024).toFixed(1)} KB`
                     : "Unknown"}
-                  {exportData.duration_ms && (
-                    <>
-                      {" "}
-                      • Generated in{" "}
-                      {(exportData.duration_ms / 1000).toFixed(1)}s
-                    </>
-                  )}
+                  {renderDuration()}
                 </p>
               )}
             </div>

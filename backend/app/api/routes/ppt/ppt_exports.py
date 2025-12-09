@@ -59,6 +59,53 @@ def _extract_image_urls(images: list) -> list[str]:
     return urls
 
 
+def _get_property_last_updated(property_obj: Property) -> Optional[datetime]:
+    """
+    Get the most relevant "last updated" timestamp for a property.
+    Prefers updated_at, falls back to last_price_change_at, then created_at.
+    """
+    return (
+        property_obj.updated_at
+        or property_obj.last_price_change_at
+        or property_obj.created_at
+    )
+
+
+def _get_reusable_export(
+    db: Session, property_obj: Property
+) -> Optional[PPTExport]:
+    """
+    Return a reusable completed export if it is newer than the property's last update
+    and the cached file is still available.
+    """
+    last_updated = _get_property_last_updated(property_obj)
+
+    existing = (
+        db.query(PPTExport)
+        .filter(
+            PPTExport.property_id == property_obj.our_id,
+            PPTExport.status == PPTExportStatus.COMPLETED.value,
+        )
+        .order_by(PPTExport.completed_at.desc())
+        .first()
+    )
+
+    if not existing or not existing.completed_at:
+        return None
+
+    # If property has never been updated, or export is newer/equal to last update
+    if last_updated and existing.completed_at < last_updated:
+        return None
+
+    # Ensure cached file is still present; if not, force regeneration
+    cache_key = f"ppt:file:{existing.id}"
+    cached_hex = get_from_cache(cache_key)
+    if not cached_hex:
+        return None
+
+    return existing
+
+
 async def _generate_ppt_task(
     export_id: UUID,
     property_data: dict,
@@ -156,6 +203,15 @@ async def generate_ppt(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Property with ID {request.property_id} not found"
+        )
+
+    # Reuse an existing completed export if it is up-to-date
+    reusable_export = _get_reusable_export(db, property_obj)
+    if reusable_export:
+        return PPTExportJobResponse(
+            job_id=reusable_export.id,
+            status=PPTExportStatusSchema.COMPLETED,
+            message="PPT already generated and up-to-date; reusing existing export.",
         )
     
     # Create export record
