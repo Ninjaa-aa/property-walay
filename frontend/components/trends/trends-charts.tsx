@@ -206,7 +206,7 @@ export function TrendsCharts({ category, cityId }: TrendsChartsProps) {
         </Card>
 
         {/* Location Trend Line Chart */}
-        <Card>
+        <Card className="pb-0!">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -238,32 +238,74 @@ export function TrendsCharts({ category, cityId }: TrendsChartsProps) {
               )}
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-0!">
             {historyLoading ? (
               <Skeleton className="h-[250px] w-full" />
             ) : locationHistory ? (
-              <div className="space-y-4">
-                {/* Simple Line Chart Visualization */}
-                <div className="relative h-[200px] border-b border-l">
-                  <div className="absolute inset-0 flex items-end justify-between gap-1 px-2 pb-1">
+              <div className="space-y-0">
+                {/* Bar Chart Visualization */}
+                <div className="bg-muted/10 relative h-[200px] w-full overflow-visible rounded-lg border pb-6">
+                  {/* Y-axis labels with intermediate values */}
+                  {(() => {
+                    const maxValue = Math.max(
+                      ...locationHistory.view_counts,
+                      1
+                    );
+                    const yAxisSteps = 4; // Number of Y-axis labels (including 0 and max)
+                    const yAxisValues = Array.from(
+                      { length: yAxisSteps },
+                      (_, i) => {
+                        return Math.round((maxValue / (yAxisSteps - 1)) * i);
+                      }
+                    );
+
+                    return (
+                      <div className="text-muted-foreground absolute top-0 left-0 flex h-full flex-col justify-between px-2 py-2 text-[10px]">
+                        {yAxisValues.reverse().map((value, idx) => (
+                          <span key={idx}>{value.toLocaleString()}</span>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Chart bars container */}
+                  <div className="ml-12 flex h-full items-end justify-between gap-1 px-2">
                     {locationHistory.view_counts.map((count, index) => {
                       const maxCount = Math.max(
                         ...locationHistory.view_counts,
                         1
                       );
-                      const height = (count / maxCount) * 100;
+                      // Calculate actual pixel height: container is 200px, padding bottom is 24px (pb-6)
+                      // So available height is 176px. Calculate bar height based on ratio.
+                      const availableHeight = 176; // 200px - 24px for labels
+                      const heightRatio = count / maxCount;
+                      const barHeightPx = Math.max(
+                        heightRatio * availableHeight,
+                        4
+                      ); // Min 4px
 
                       return (
                         <div
                           key={index}
-                          className="group flex flex-1 flex-col items-center justify-end"
+                          className="group relative flex h-full flex-1 flex-col items-center justify-end"
                         >
+                          {/* Bar */}
                           <div
-                            className="from-primary to-primary/40 hover:from-primary/90 w-full rounded-t bg-linear-to-t transition-all duration-300"
-                            style={{ height: `${Math.max(height, 2)}%` }}
+                            className="from-primary via-primary/70 to-primary/40 hover:from-primary/90 hover:via-primary/80 w-full cursor-pointer rounded-t bg-linear-to-t shadow-sm transition-all duration-300"
+                            style={{
+                              height: `${barHeightPx}px`,
+                            }}
+                            title={`${locationHistory.labels[index]}: ${count.toLocaleString()} views`}
                           />
-                          <div className="text-muted-foreground absolute -bottom-6 text-[10px] whitespace-nowrap opacity-0 transition-opacity group-hover:opacity-100">
-                            {locationHistory.labels[index]}
+
+                          {/* X-axis label (month) */}
+                          <div className="text-muted-foreground absolute -bottom-5 text-[10px] whitespace-nowrap">
+                            {locationHistory.labels[index]?.split(" ")[0] || ""}
+                          </div>
+
+                          {/* Hover tooltip */}
+                          <div className="bg-popover text-popover-foreground pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 rounded px-2 py-1 text-xs font-medium whitespace-nowrap opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+                            {count.toLocaleString()} views
                           </div>
                         </div>
                       );
@@ -272,7 +314,7 @@ export function TrendsCharts({ category, cityId }: TrendsChartsProps) {
                 </div>
 
                 {/* Stats Summary */}
-                <div className="grid grid-cols-3 gap-4 pt-4">
+                <div className="mb-0 grid grid-cols-3 gap-4 pt-4 pb-0">
                   <div className="text-center">
                     <p className="text-2xl font-bold">
                       {locationHistory.view_counts
