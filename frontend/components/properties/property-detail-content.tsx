@@ -6,6 +6,7 @@ import { PropertyImageGallery } from "./property-image-gallery";
 import { PropertyDetailHeader } from "./property-detail-header";
 import { ContactAgentCard } from "./contact-agent-card";
 import { SimilarProperties } from "./similar-properties";
+import { GeneratePptButton } from "@/components/properties/ppt-generation/generate-ppt-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,7 @@ import { formatPriceFull } from "@/lib/utils/format-price";
 import { formatAbsoluteDate } from "@/lib/utils/format-date";
 import { formatArea } from "@/lib/utils/format-area";
 import { generatePropertyDescription } from "@/lib/utils/property-description";
-import { MapPin } from "lucide-react";
+import { MapPin, Share2 } from "lucide-react";
 import { FadeIn } from "@/components/animations";
 import { ApiClientError } from "@/lib/api/client";
 import type { ApiProperty } from "@/types/api/property";
@@ -249,6 +250,36 @@ export function PropertyDetailContent({
                     </p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </FadeIn>
+
+          {/* Actions Card - PPT Generation */}
+          <FadeIn delay={0.7}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Share2 className="h-5 w-5" />
+                  Share & Export
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-3">
+                  <GeneratePptButton
+                    propertyId={property.our_id}
+                    propertyTitle={property.title || undefined}
+                    variant="default"
+                    size="lg"
+                  />
+                  <Button variant="outline" size="lg" className="gap-2">
+                    <Share2 className="h-4 w-4" />
+                    Share Property
+                  </Button>
+                </div>
+                <p className="text-muted-foreground mt-3 text-sm">
+                  Generate a professional PowerPoint presentation with all
+                  property details, images, and contact information.
+                </p>
               </CardContent>
             </Card>
           </FadeIn>

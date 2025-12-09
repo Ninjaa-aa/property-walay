@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, Numeric, DateTime, Text, CheckConstraint, Index
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
-from app.core.database import Base
+from app.core.database.database import Base
 import uuid
 
 

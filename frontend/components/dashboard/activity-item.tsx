@@ -7,6 +7,7 @@ import {
   Calendar,
   ExternalLink,
   Bell,
+  Presentation,
 } from "lucide-react";
 import type { Activity } from "@/types/dashboard";
 import type { LucideIcon } from "lucide-react";
@@ -21,6 +22,7 @@ const activityIcons: Record<Activity["type"], LucideIcon> = {
   new_matches: Sparkles,
   meeting: Calendar,
   view: ExternalLink,
+  ppt_export: Presentation,
 };
 
 export function ActivityItem({ activity }: ActivityItemProps) {

@@ -5,7 +5,7 @@ from typing import Optional
 from uuid import UUID
 
 from app.api.deps import get_database
-from app.models.property import Property
+from app.models.property.property import Property
 from app.schemas.property import (
     PropertyCreate,
     PropertyUpdate,
@@ -13,7 +13,7 @@ from app.schemas.property import (
     PropertyListResponse,
     PropertyFilterParams,
 )
-from app.core.cache import (
+from app.core.cache.cache import (
     get_cache_key,
     get_from_cache,
     set_cache,

@@ -3,7 +3,8 @@ export type ActivityType =
   | "price_change"
   | "new_matches"
   | "meeting"
-  | "view";
+  | "view"
+  | "ppt_export";
 
 export interface Activity {
   id: string;
@@ -12,4 +13,6 @@ export interface Activity {
   description?: string;
   timestamp: Date;
   propertyId?: string;
+  /** For ppt_export type - URL to download the generated PPT */
+  downloadUrl?: string;
 }

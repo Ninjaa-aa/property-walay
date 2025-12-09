@@ -1,5 +1,3 @@
-from app.api.routes import properties
-
-__all__ = ["properties"]
+__all__: list[str] = []
 
 

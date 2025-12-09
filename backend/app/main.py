@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
-from app.core.cache import test_connection
-from app.api.routes import properties
+from app.core.configs.config import settings
+from app.core.cache.cache import test_connection
+from app.api.routes.property import properties
+from app.api.routes.ppt import ppt_exports
 
 # Create FastAPI app
 app = FastAPI(
@@ -24,6 +25,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(properties.router, prefix=settings.API_V1_STR)
+app.include_router(ppt_exports.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")

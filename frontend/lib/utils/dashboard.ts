@@ -69,6 +69,8 @@ export function getActivityColor(type: Activity["type"]): string {
       return "bg-purple-500";
     case "view":
       return "bg-gray-500";
+    case "ppt_export":
+      return "bg-emerald-500";
     default:
       return "bg-gray-500";
   }

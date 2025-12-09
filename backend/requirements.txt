@@ -19,3 +19,5 @@ pillow
 black
 flake8
 pydantic[email]
+python-pptx
+aiofiles

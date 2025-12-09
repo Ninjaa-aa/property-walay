@@ -6,19 +6,8 @@ Handles caching for API responses
 import json
 import redis
 from typing import Optional, Any
-from app.core.config import settings
-
-# Create Redis connection
-redis_client = redis.Redis(
-    host=settings.REDIS_HOST,
-    port=settings.REDIS_PORT,
-    username=settings.REDIS_USERNAME,
-    password=settings.REDIS_PASSWORD,
-    decode_responses=settings.REDIS_DECODE_RESPONSES,
-    socket_connect_timeout=5,
-    socket_timeout=5,
-    retry_on_timeout=True,
-)
+from app.core.configs.config import settings
+from app.core.cache.redis import redis_client
 
 
 def get_cache_key(prefix: str, *args, **kwargs) -> str:
