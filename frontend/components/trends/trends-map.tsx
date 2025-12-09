@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useMapLocations } from "@/hooks/use-trends";
 import {
   Card,
@@ -10,8 +11,105 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, TrendingUp, TrendingDown, Eye } from "lucide-react";
+import { MapPin, Eye } from "lucide-react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import type { TrendsCategory, MapLocation } from "@/types/api/trends";
+
+// Fix for default marker icons in Next.js/React
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)
+  ._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+});
+
+// Component to ensure map is properly sized
+function MapResizer() {
+  const map = useMap();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Check if map and its container are ready
+    if (!map || !map.getContainer()) {
+      return;
+    }
+
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Use a longer delay to ensure DOM is ready
+    timeoutRef.current = setTimeout(() => {
+      try {
+        if (map && map.getContainer()) {
+          map.invalidateSize();
+        }
+      } catch (error) {
+        // Silently handle errors during map initialization
+        console.warn("Map resize error:", error);
+      }
+    }, 200);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [map]);
+
+  return null;
+}
+
+// Component to fit map bounds to markers
+function FitBounds({ locations }: { locations: MapLocation[] }) {
+  const map = useMap();
+
+  // Memoize bounds calculation to avoid unnecessary recalculations
+  const bounds = useMemo(() => {
+    if (locations.length === 0) return null;
+    try {
+      return L.latLngBounds(
+        locations.map(
+          (loc) => [loc.latitude, loc.longitude] as [number, number]
+        )
+      );
+    } catch {
+      return null;
+    }
+  }, [locations]);
+
+  useEffect(() => {
+    if (bounds && map) {
+      // Use whenReady to ensure map is fully initialized
+      const fitBounds = () => {
+        try {
+          if (!map || !map.getContainer()) {
+            return;
+          }
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+        } catch (error) {
+          console.warn("Fit bounds error:", error);
+        }
+      };
+
+      if (map.whenReady) {
+        map.whenReady(fitBounds);
+      } else {
+        // Fallback if whenReady is not available
+        setTimeout(fitBounds, 300);
+      }
+    }
+  }, [bounds, map]);
+
+  return null;
+}
 
 interface TrendsMapProps {
   category: TrendsCategory;
@@ -25,6 +123,22 @@ export function TrendsMap({ category, regionId, cityId }: TrendsMapProps) {
     city_id: cityId,
     category,
   });
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Track mount state to ensure map only renders on client
+  useEffect(() => {
+    // Use setTimeout to avoid synchronous setState in effect
+    const timer = setTimeout(() => {
+      setIsMounted(true);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      setIsMounted(false);
+    };
+  }, []);
+
+  // Generate a unique key based on props to force map recreation when they change
+  const mapKey = `${category}-${regionId ?? "none"}-${cityId ?? "none"}`;
 
   if (loading) {
     return (
@@ -63,18 +177,55 @@ export function TrendsMap({ category, regionId, cityId }: TrendsMapProps) {
     );
   }
 
-  // Group locations by approximate grid for visualization
-  const locationsByPosition = locations.reduce(
-    (acc, loc) => {
-      const key = loc.position
-        ? `pos-${Math.ceil(loc.position / 10)}`
-        : "unranked";
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(loc);
-      return acc;
-    },
-    {} as Record<string, MapLocation[]>
+  // Calculate center point (Pakistan center) as fallback
+  const center: [number, number] = [30.3753, 69.3451];
+
+  // Filter locations with valid coordinates
+  const validLocations = locations.filter(
+    (loc) =>
+      loc.latitude && loc.longitude && loc.latitude > 0 && loc.longitude > 0
   );
+
+  // Create custom icons based on position
+  const createCustomIcon = (position?: number | null) => {
+    let color = "#94a3b8"; // Default gray
+    if (position) {
+      if (position <= 10)
+        color = "#10b981"; // Emerald for top 10
+      else if (position <= 50) color = "#f59e0b"; // Amber for 11-50
+    }
+
+    return L.divIcon({
+      className: "custom-marker",
+      html: `<div style="
+        background-color: ${color};
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      "></div>`,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+    });
+  };
+
+  // Don't render map until component is mounted on client
+  if (!isMounted) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="text-primary h-5 w-5" />
+            Location Map
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[600px] w-full rounded-lg" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -84,137 +235,140 @@ export function TrendsMap({ category, regionId, cityId }: TrendsMapProps) {
           Location Map
         </CardTitle>
         <CardDescription>
-          {locations.length} locations with coordinates •{" "}
+          {validLocations.length} locations with coordinates •{" "}
           {category === "buying" ? "Buying" : "Renting"} trends
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Map Placeholder - In production, integrate with Mapbox/Google Maps/Leaflet */}
-        <div className="relative overflow-hidden rounded-lg border bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
-          {/* Pakistan Map Outline SVG Background */}
-          <div className="absolute inset-0 opacity-10">
-            <svg viewBox="0 0 800 600" className="h-full w-full">
-              <path
-                d="M200,100 L300,80 L400,100 L500,150 L600,200 L650,300 L600,400 L500,450 L400,500 L300,480 L200,400 L150,300 Z"
-                fill="currentColor"
-                stroke="currentColor"
-                strokeWidth="2"
-              />
-            </svg>
-          </div>
-
-          {/* Location Grid */}
-          <div className="relative min-h-[500px] p-6">
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {locations.slice(0, 20).map((location) => (
-                <LocationCard key={location.id} location={location} />
-              ))}
+        {validLocations.length === 0 ? (
+          <div className="bg-muted/50 flex h-[500px] items-center justify-center rounded-lg border">
+            <div className="text-center">
+              <MapPin className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+              <p className="text-muted-foreground">
+                No locations found for the selected filters
+              </p>
             </div>
+          </div>
+        ) : (
+          <div className="relative h-[600px] w-full overflow-hidden rounded-lg border">
+            <MapContainer
+              key={`map-${mapKey}`}
+              center={center}
+              zoom={6}
+              className="z-0 h-full w-full"
+              scrollWheelZoom={true}
+              style={{ height: "100%", width: "100%", zIndex: 0 }}
+            >
+              <MapResizer />
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                subdomains={["a", "b", "c", "d"]}
+                maxZoom={19}
+                minZoom={1}
+              />
+              <FitBounds locations={validLocations} />
+              {validLocations.map((location) => (
+                <Marker
+                  key={location.id}
+                  position={[location.latitude, location.longitude]}
+                  icon={createCustomIcon(location.position)}
+                >
+                  <Popup>
+                    <div
+                      className="min-w-[200px] p-2"
+                      style={{ color: "#1f2937" }}
+                    >
+                      <h3
+                        className="mb-2 text-sm font-semibold"
+                        style={{ color: "#111827" }}
+                      >
+                        {location.title}
+                      </h3>
+                      <div className="space-y-1 text-xs">
+                        {location.position && (
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className="text-xs"
+                              style={{
+                                color: "#374151",
+                                borderColor: "#d1d5db",
+                                backgroundColor: "#f9fafb",
+                              }}
+                            >
+                              Rank #{location.position}
+                            </Badge>
+                            {location.position_change !== null &&
+                              location.position_change !== undefined && (
+                                <span
+                                  className="text-xs font-medium"
+                                  style={{
+                                    color:
+                                      location.position_change > 0
+                                        ? "#059669"
+                                        : location.position_change < 0
+                                          ? "#dc2626"
+                                          : "#6b7280",
+                                  }}
+                                >
+                                  {location.position_change > 0
+                                    ? "↑"
+                                    : location.position_change < 0
+                                      ? "↓"
+                                      : "→"}{" "}
+                                  {Math.abs(location.position_change || 0)}
+                                </span>
+                              )}
+                          </div>
+                        )}
+                        {location.view_count && (
+                          <div
+                            className="flex items-center gap-1"
+                            style={{ color: "#6b7280" }}
+                          >
+                            <Eye
+                              className="h-3 w-3"
+                              style={{ color: "#6b7280" }}
+                            />
+                            <span>
+                              {location.view_count.toLocaleString()} views
+                            </span>
+                          </div>
+                        )}
+                        {location.search_percentage && (
+                          <div style={{ color: "#6b7280" }}>
+                            Search: {location.search_percentage.toFixed(1)}%
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
 
-            {locations.length > 20 && (
-              <div className="mt-6 text-center">
-                <Badge variant="secondary" className="text-sm">
-                  +{locations.length - 20} more locations
-                </Badge>
-              </div>
-            )}
-
-            {locations.length === 0 && (
-              <div className="flex h-[400px] items-center justify-center">
-                <div className="text-center">
-                  <MapPin className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-                  <p className="text-muted-foreground">
-                    No locations found for the selected filters
-                  </p>
+            {/* Map Legend */}
+            <div className="bg-background/95 absolute bottom-4 left-4 z-50 rounded-lg border p-3 shadow-lg backdrop-blur-sm">
+              <p className="mb-2 text-xs font-medium">Position Legend</p>
+              <div className="flex flex-col gap-1.5 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full border border-white bg-emerald-500" />
+                  <span>Top 10</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full border border-white bg-amber-500" />
+                  <span>11-50</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full border border-white bg-slate-400" />
+                  <span>51+</span>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Map Legend */}
-          <div className="bg-background/90 absolute bottom-4 left-4 rounded-lg border p-3 shadow-sm backdrop-blur-sm">
-            <p className="mb-2 text-xs font-medium">Position Legend</p>
-            <div className="flex flex-col gap-1 text-xs">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-emerald-500" />
-                <span>Top 10</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-amber-500" />
-                <span>11-50</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-slate-400" />
-                <span>51+</span>
-              </div>
             </div>
           </div>
-        </div>
-
-        {/* Note about map integration */}
-        <p className="text-muted-foreground mt-4 text-center text-xs">
-          💡 For full interactive map, integrate with Mapbox, Google Maps, or
-          Leaflet
-        </p>
+        )}
       </CardContent>
     </Card>
-  );
-}
-
-interface LocationCardProps {
-  location: MapLocation;
-}
-
-function LocationCard({ location }: LocationCardProps) {
-  const positionColor =
-    location.position && location.position <= 10
-      ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950"
-      : location.position && location.position <= 50
-        ? "border-amber-500 bg-amber-50 dark:bg-amber-950"
-        : "border-slate-300 bg-slate-50 dark:bg-slate-900";
-
-  const changeIcon =
-    location.position_change && location.position_change > 0 ? (
-      <TrendingUp className="h-3 w-3 text-emerald-500" />
-    ) : location.position_change && location.position_change < 0 ? (
-      <TrendingDown className="h-3 w-3 text-rose-500" />
-    ) : null;
-
-  return (
-    <div
-      className={`rounded-lg border-2 p-3 transition-all hover:shadow-md ${positionColor}`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium">{location.title}</p>
-          {location.position && (
-            <div className="mt-1 flex items-center gap-1">
-              <Badge variant="outline" className="text-xs">
-                #{location.position}
-              </Badge>
-              {changeIcon}
-              {location.position_change && (
-                <span
-                  className={`text-xs ${
-                    location.position_change > 0
-                      ? "text-emerald-600"
-                      : "text-rose-600"
-                  }`}
-                >
-                  {location.position_change > 0 ? "+" : ""}
-                  {location.position_change}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-      {location.view_count && (
-        <div className="text-muted-foreground mt-2 flex items-center gap-1 text-xs">
-          <Eye className="h-3 w-3" />
-          <span>{location.view_count.toLocaleString()} views</span>
-        </div>
-      )}
-    </div>
   );
 }

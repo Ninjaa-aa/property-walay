@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAnalyticsOverview, useTopLocations } from "@/hooks/use-trends";
 import { getLocationHistory } from "@/lib/api/trends";
 import {
@@ -30,12 +30,11 @@ interface TrendsChartsProps {
 export function TrendsCharts({ category, cityId }: TrendsChartsProps) {
   const { analytics, loading: analyticsLoading } =
     useAnalyticsOverview(category);
-  const { locations: topLocations, loading: locationsLoading } =
-    useTopLocations(
-      cityId || 1, // Default to first city if none selected
-      category,
-      5
-    );
+  const { locations: topLocations } = useTopLocations(
+    cityId || 1, // Default to first city if none selected
+    category,
+    5
+  );
 
   const [selectedLocationId, setSelectedLocationId] = useState<number | null>(
     null
@@ -43,25 +42,41 @@ export function TrendsCharts({ category, cityId }: TrendsChartsProps) {
   const [locationHistory, setLocationHistory] =
     useState<LocationHistory | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const locationHistoryRef = useRef<LocationHistory | null>(null);
 
   // Fetch location history when selection changes
   useEffect(() => {
     if (!selectedLocationId) {
-      setLocationHistory(null);
+      if (locationHistoryRef.current !== null) {
+        locationHistoryRef.current = null;
+        queueMicrotask(() => {
+          setLocationHistory(null);
+        });
+      }
       return;
     }
 
-    setHistoryLoading(true);
+    queueMicrotask(() => {
+      setHistoryLoading(true);
+    });
     getLocationHistory(selectedLocationId, category, 12)
-      .then(setLocationHistory)
-      .catch(() => setLocationHistory(null))
+      .then((data) => {
+        locationHistoryRef.current = data;
+        setLocationHistory(data);
+      })
+      .catch(() => {
+        locationHistoryRef.current = null;
+        setLocationHistory(null);
+      })
       .finally(() => setHistoryLoading(false));
   }, [selectedLocationId, category]);
 
   // Set default selection when top locations load
   useEffect(() => {
     if (topLocations.length > 0 && !selectedLocationId) {
-      setSelectedLocationId(topLocations[0].location_id);
+      queueMicrotask(() => {
+        setSelectedLocationId(topLocations[0].location_id);
+      });
     }
   }, [topLocations, selectedLocationId]);
 
@@ -125,7 +140,7 @@ export function TrendsCharts({ category, cityId }: TrendsChartsProps) {
                   </div>
                   <div className="bg-muted h-3 overflow-hidden rounded-full">
                     <div
-                      className="from-primary to-primary/60 h-full rounded-full bg-gradient-to-r transition-all duration-500"
+                      className="from-primary to-primary/60 h-full rounded-full bg-linear-to-r transition-all duration-500"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
@@ -244,7 +259,7 @@ export function TrendsCharts({ category, cityId }: TrendsChartsProps) {
                           className="group flex flex-1 flex-col items-center justify-end"
                         >
                           <div
-                            className="from-primary to-primary/40 hover:from-primary/90 w-full rounded-t bg-gradient-to-t transition-all duration-300"
+                            className="from-primary to-primary/40 hover:from-primary/90 w-full rounded-t bg-linear-to-t transition-all duration-300"
                             style={{ height: `${Math.max(height, 2)}%` }}
                           />
                           <div className="text-muted-foreground absolute -bottom-6 text-[10px] whitespace-nowrap opacity-0 transition-opacity group-hover:opacity-100">

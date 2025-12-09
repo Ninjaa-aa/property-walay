@@ -1,14 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { TrendsOverview } from "@/components/trends/trends-overview";
 import { TrendsFilters } from "@/components/trends/trends-filters";
-import { TrendsMap } from "@/components/trends/trends-map";
 import { TrendsCharts } from "@/components/trends/trends-charts";
 import { TrendsTable } from "@/components/trends/trends-table";
 import { TopMovers } from "@/components/trends/top-movers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { TrendsCategory } from "@/types/api/trends";
+
+// Dynamically import TrendsMap to avoid SSR issues with Leaflet
+const TrendsMap = dynamic(
+  () =>
+    import("@/components/trends/trends-map").then((mod) => ({
+      default: mod.TrendsMap,
+    })),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[600px] w-full rounded-lg" />,
+  }
+);
 
 export default function TrendsPage() {
   const [category, setCategory] = useState<TrendsCategory>("buying");

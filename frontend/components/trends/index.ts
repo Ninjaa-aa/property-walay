@@ -9,4 +9,3 @@ export { TrendsMap } from "./trends-map";
 export { TrendsCharts } from "./trends-charts";
 export { TrendsTable } from "./trends-table";
 export { TopMovers } from "./top-movers";
-
