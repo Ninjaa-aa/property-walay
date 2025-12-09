@@ -13,6 +13,17 @@ import { Bed, Bath, MapPin, Heart } from "lucide-react";
 import type { ApiProperty } from "@/types/api/property";
 import { useState } from "react";
 
+// Check if image URL should bypass Next.js optimization
+function shouldUnoptimizeImage(url: string): boolean {
+  if (!url || typeof url !== "string") return false;
+  return (
+    url.includes("zameen-dev.s3") ||
+    url.includes("zameen.com") ||
+    url.includes("graana.com") ||
+    url.includes("images.graana.com")
+  );
+}
+
 interface PropertyCardProps {
   property: ApiProperty;
   onSave?: (propertyId: string) => void;
@@ -38,6 +49,7 @@ export function PropertyCard({
   isSaved = false,
 }: PropertyCardProps) {
   const [saved, setSaved] = useState(isSaved);
+  const [imageError, setImageError] = useState(false);
   const imageUrl = getPropertyImage(property);
 
   const handleSave = (e: React.MouseEvent) => {
@@ -53,13 +65,21 @@ export function PropertyCard({
         <div className="group bg-card overflow-hidden rounded-lg border transition-all hover:shadow-lg">
           {/* Image Section */}
           <div className="bg-muted relative aspect-video w-full overflow-hidden">
-            <Image
-              src={imageUrl}
-              alt={property.title || "Property"}
-              fill
-              className="object-cover transition-transform group-hover:scale-105"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
+            {!imageError && imageUrl !== "/placeholder-property.jpg" ? (
+              <Image
+                src={imageUrl}
+                alt={property.title || "Property"}
+                fill
+                className="object-cover transition-transform group-hover:scale-105"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                unoptimized={shouldUnoptimizeImage(imageUrl)}
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="from-primary/20 to-secondary/20 flex h-full w-full items-center justify-center bg-linear-to-br">
+                <span className="text-muted-foreground text-sm">No Image</span>
+              </div>
+            )}
 
             {/* Source Badge */}
             <Badge

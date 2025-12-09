@@ -532,21 +532,37 @@ class PropertyPPTGenerator:
         map_width, map_height = Inches(12.3), Inches(5)
 
         map_image = None
-        if lat and lng:
+        if lat is not None and lng is not None:
             try:
-                map_image = self._fetch_static_map(lat, lng)
+                # Convert to float if needed (handles Decimal, string, etc.)
+                lat_float = float(lat)
+                lng_float = float(lng)
+                logger.info(f"Fetching map for coordinates: {lat_float}, {lng_float}")
+                map_image = self._fetch_static_map(lat_float, lng_float)
+                if map_image:
+                    logger.info(f"Map image fetched successfully: {len(map_image)} bytes")
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Invalid coordinate format: lat={lat}, lng={lng}, error={e}")
             except Exception as e:
-                logger.warning(f"Map fetch failed: {e}")
+                logger.warning(f"Map fetch failed: {type(e).__name__}: {e}")
 
         if map_image:
-            slide.shapes.add_picture(
-                io.BytesIO(map_image),
-                map_left,
-                map_top,
-                width=map_width,
-                height=map_height,
-            )
-        else:
+            try:
+                slide.shapes.add_picture(
+                    io.BytesIO(map_image),
+                    map_left,
+                    map_top,
+                    width=map_width,
+                    height=map_height,
+                )
+                logger.info("Map image added to slide successfully")
+            except Exception as e:
+                logger.error(f"Failed to add map image to slide: {e}")
+                # Fall through to placeholder
+                map_image = None
+
+        if not map_image:
+            # Show placeholder with coordinates if available
             map_placeholder = slide.shapes.add_shape(
                 MSO_SHAPE.RECTANGLE,
                 map_left,
@@ -558,10 +574,20 @@ class PropertyPPTGenerator:
             map_placeholder.fill.fore_color.rgb = self.CARD_BG
             map_placeholder.line.color.rgb = RGBColor(55, 65, 81)  # subtle border
 
+            if lat is not None and lng is not None:
+                try:
+                    lat_float = float(lat)
+                    lng_float = float(lng)
+                    coord_text = f"Coordinates:\n{lat_float:.6f}, {lng_float:.6f}\n\nMap unavailable"
+                except (ValueError, TypeError):
+                    coord_text = "Map not available"
+            else:
+                coord_text = "Map not available\n(Coordinates not provided)"
+            
             self._add_shape_with_text(
-                slide, 5, 4, 4, 1,
-                "Map not available",
-                font_size=16, font_color=self.LIGHT_TEXT,
+                slide, 5, 3.8, 4, 1.4,
+                coord_text,
+                font_size=14, font_color=self.LIGHT_TEXT,
                 alignment=PP_ALIGN.CENTER
             )
     
@@ -710,20 +736,81 @@ class PropertyPPTGenerator:
 
     def _fetch_static_map(self, lat: float, lng: float) -> Optional[bytes]:
         """
-        Fetch a static map image from OpenStreetMap's staticmap service.
+        Fetch a static map image using multiple fallback services.
+        Tries OpenStreetMap, then alternative services.
         Returns image bytes or None on failure.
         """
-        url = (
-            "https://staticmap.openstreetmap.de/staticmap.php"
-            f"?center={lat},{lng}&zoom=15&size=800x500&markers={lat},{lng},lightblue1"
-        )
+        # Ensure coordinates are floats and valid
         try:
-            resp = httpx.get(url, timeout=8)
-            resp.raise_for_status()
-            return resp.content
-        except Exception as e:
-            logger.warning(f"Failed to fetch static map: {e}")
+            lat = float(lat)
+            lng = float(lng)
+            
+            # Validate coordinates (rough bounds for Pakistan, but allow wider range)
+            if not (-90.0 <= lat <= 90.0) or not (-180.0 <= lng <= 180.0):
+                logger.warning(f"Coordinates out of valid range: lat={lat}, lng={lng}")
+                return None
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Invalid coordinates: lat={lat}, lng={lng}, error={e}")
             return None
+        
+        # List of map services to try (in order of preference)
+        zoom = 15
+        map_services = [
+            # OpenStreetMap static map (primary) - using staticmap.openstreetmap.de
+            {
+                "url": f"https://staticmap.openstreetmap.de/staticmap.php?center={lat},{lng}&zoom={zoom}&size=800x500&markers={lat},{lng},lightblue1",
+                "name": "OpenStreetMap Static"
+            },
+            # Alternative: OpenStreetMap tile service (single tile)
+            {
+                "url": f"https://tile.openstreetmap.org/{zoom}/{int((lng + 180) / 360 * (2 ** zoom))}/{int((1 - math.log(math.tan(math.radians(lat)) + 1 / math.cos(math.radians(lat))) / math.pi) / 2 * (2 ** zoom))}.png",
+                "name": "OpenStreetMap Tile"
+            }
+        ]
+        
+        # Try each service until one works
+        for service in map_services:
+            try:
+                logger.info(f"Trying {service['name']} for map at {lat}, {lng}")
+                
+                # Use sync httpx client with proper headers and longer timeout
+                with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+                    resp = client.get(
+                        service["url"],
+                        headers={
+                            "User-Agent": "PropertyWalay-PPT-Generator/1.0 (https://propertywalay.com)",
+                            "Accept": "image/png,image/jpeg,image/webp,*/*",
+                            "Referer": "https://propertywalay.com"
+                        }
+                    )
+                    resp.raise_for_status()
+                    
+                    # Verify it's actually an image
+                    content_type = resp.headers.get("content-type", "").lower()
+                    if "image" in content_type and len(resp.content) > 100:
+                        logger.info(f"Successfully fetched map from {service['name']} ({len(resp.content)} bytes)")
+                        return resp.content
+                    else:
+                        logger.warning(f"Invalid image response from {service['name']}: content-type={content_type}, size={len(resp.content)}")
+                        continue
+                        
+            except httpx.TimeoutException:
+                logger.warning(f"Map fetch from {service['name']} timed out")
+                continue
+            except httpx.ConnectError as e:
+                # Log at debug level since fallback will be tried
+                logger.debug(f"Connection error with {service['name']}: {e}")
+                continue
+            except httpx.HTTPStatusError as e:
+                logger.warning(f"{service['name']} returned error {e.response.status_code}")
+                continue
+            except Exception as e:
+                logger.warning(f"Failed to fetch map from {service['name']}: {type(e).__name__}: {e}")
+                continue
+        
+        # All services failed
+        logger.warning(f"All map services failed for coordinates {lat}, {lng}")
+        return None
 
 
 class ImageOptimizer:

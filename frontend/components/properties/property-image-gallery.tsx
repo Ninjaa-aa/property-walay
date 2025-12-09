@@ -11,11 +11,23 @@ interface PropertyImageGalleryProps {
   property: ApiProperty;
 }
 
+// Check if image URL should bypass Next.js optimization
+function shouldUnoptimizeImage(url: string): boolean {
+  if (!url || typeof url !== "string") return false;
+  return (
+    url.includes("zameen-dev.s3") ||
+    url.includes("zameen.com") ||
+    url.includes("graana.com") ||
+    url.includes("images.graana.com")
+  );
+}
+
 export function PropertyImageGallery({ property }: PropertyImageGalleryProps) {
   // Get all cleaned and valid image URLs
   const displayImages = getCleanedImages(property.images);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [imageError, setImageError] = useState(false);
   const mainImage =
     displayImages.length > 0
       ? displayImages[selectedIndex]
@@ -41,7 +53,9 @@ export function PropertyImageGallery({ property }: PropertyImageGalleryProps) {
     <div className="space-y-4">
       {/* Main Image */}
       <div className="bg-muted relative aspect-video w-full overflow-hidden rounded-lg">
-        {mainImage && mainImage !== "/placeholder-property.jpg" ? (
+        {mainImage &&
+        mainImage !== "/placeholder-property.jpg" &&
+        !imageError ? (
           <Image
             src={mainImage}
             alt={property.title || "Property image"}
@@ -49,6 +63,10 @@ export function PropertyImageGallery({ property }: PropertyImageGalleryProps) {
             className="object-cover"
             priority
             sizes="100vw"
+            unoptimized={shouldUnoptimizeImage(mainImage)}
+            onError={() => {
+              setImageError(true);
+            }}
           />
         ) : (
           <div className="from-primary/20 to-secondary/20 flex h-full w-full items-center justify-center bg-linear-to-br">
@@ -122,6 +140,7 @@ export function PropertyImageGallery({ property }: PropertyImageGalleryProps) {
                 fill
                 className="object-cover"
                 sizes="80px"
+                unoptimized={shouldUnoptimizeImage(image)}
               />
             </button>
           ))}

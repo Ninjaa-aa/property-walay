@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { AnimatedCard } from "@/components/animations";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
@@ -11,18 +14,39 @@ interface PropertyCardProps {
   property: DashboardProperty;
 }
 
+// Check if image URL should bypass Next.js optimization
+function shouldUnoptimizeImage(url: string): boolean {
+  if (!url || typeof url !== "string") return false;
+  return (
+    url.includes("zameen-dev.s3") ||
+    url.includes("zameen.com") ||
+    url.includes("graana.com") ||
+    url.includes("images.graana.com")
+  );
+}
+
 export function PropertyCard({ property }: PropertyCardProps) {
+  const [imageError, setImageError] = useState(false);
+
   return (
     <AnimatedCard hoverEffect>
       <div className="overflow-hidden rounded-lg border">
         <div className="bg-muted relative aspect-video w-full overflow-hidden">
-          <Image
-            src={property.image}
-            alt={property.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
+          {!imageError && property.image !== "/placeholder-property.jpg" ? (
+            <Image
+              src={property.image}
+              alt={property.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              unoptimized={shouldUnoptimizeImage(property.image)}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="from-primary/20 to-secondary/20 flex h-full w-full items-center justify-center bg-linear-to-br">
+              <span className="text-muted-foreground text-sm">No Image</span>
+            </div>
+          )}
         </div>
         <CardContent className="p-4">
           <h3 className="font-semibold">{property.title}</h3>

@@ -5,6 +5,7 @@ Uses async httpx + BeautifulSoup to fetch missing contact/amenity details.
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, Dict, Optional, Tuple
 
 import httpx
@@ -113,6 +114,40 @@ async def fetch_zameen_amenities(url: str) -> Tuple[Optional[Dict[str, Any]], Op
     return (categories or None, None)
 
 
+async def fetch_lamudi_image(url: str) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Fetch a Lamudi property page and extract the main listing image.
+    Returns (image_url, error_message)
+    """
+    html = await _fetch_html(url)
+    if not html:
+        return None, "Failed to fetch Lamudi page"
+
+    soup = BeautifulSoup(html, "html.parser")
+    
+    # Find the listing photo image element
+    img_element = soup.find('img', {'aria-label': 'Listing photo'})
+    image_url = ""
+    
+    if img_element:
+        src = img_element.get('src', '')
+        if src:
+            # Convert to the format: @https://media.zameen.com/thumbnails/280852050-800x600.webp
+            # Extract the image ID and convert to 800x600.webp format
+            img_id_match = re.search(r'/(\d+)-240x180\.jpeg', src)
+            if img_id_match:
+                img_id = img_id_match.group(1)
+                image_url = f"@https://media.zameen.com/thumbnails/{img_id}-800x600.webp"
+            else:
+                # Try alternative pattern or use original src
+                image_url = src if src.startswith('http') else None
+    
+    if not image_url:
+        return None, "Lamudi listing image not found"
+    
+    return image_url, None
+
+
 async def enrich_property_from_source(source: str, link: Optional[str]) -> Dict[str, Any]:
     """
     Enrich property data by scraping source links when available.
@@ -143,6 +178,10 @@ async def enrich_property_from_source(source: str, link: Optional[str]) -> Dict[
         amenities, _ = await fetch_zameen_amenities(link)
         if amenities:
             result["scraped_amenities"] = amenities
+    elif source == "lamudi":
+        image_url, _ = await fetch_lamudi_image(link)
+        if image_url:
+            result["scraped_images"] = [image_url]
 
     return result
 

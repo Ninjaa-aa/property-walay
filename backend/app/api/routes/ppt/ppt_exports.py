@@ -265,6 +265,13 @@ async def generate_ppt(
             property_data["poc_number"] = scraped_contact["phone"]
         if not property_data.get("area_name") and scraped_contact.get("address"):
             property_data["area_name"] = scraped_contact["address"]
+        
+        # Add scraped images to image URLs (prepend to prioritize scraped images)
+        scraped_images = enrichment.get("scraped_images") or []
+        if scraped_images:
+            # Clean scraped image URLs and prepend to existing URLs
+            cleaned_scraped = [clean_image_url(img) for img in scraped_images if clean_image_url(img)]
+            image_urls = cleaned_scraped + image_urls
     
     # Get database URL for background task
     from app.core.configs.config import settings
