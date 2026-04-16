@@ -8,6 +8,7 @@ import {
   Calendar,
   Settings,
   BarChart3,
+  MessageCircle,
 } from "lucide-react";
 
 export const dashboardNavigationItems: DashboardNavigationItem[] = [
@@ -25,6 +26,11 @@ export const dashboardNavigationItems: DashboardNavigationItem[] = [
     name: "Market Trends",
     href: "/dashboard/trends",
     icon: BarChart3,
+  },
+  {
+    name: "Chatbot",
+    href: "/dashboard/chatbot",
+    icon: MessageCircle,
   },
   {
     name: "Saved Properties",

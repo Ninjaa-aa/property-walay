@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     REDIS_PASSWORD: str 
     REDIS_DECODE_RESPONSES: bool 
     
+    # Chatbot Configuration
+    CHATBOT_WEBHOOK_URL: str = ""
+    
     # Cache Configuration
     CACHE_TTL_SECONDS: int = 300  # 5 minutes default cache TTL
     

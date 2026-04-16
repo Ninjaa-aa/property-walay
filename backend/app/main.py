@@ -10,6 +10,7 @@ from app.core.cache.cache import test_connection
 from app.api.routes.property import properties
 from app.api.routes.ppt import ppt_exports
 from app.api.routes.trends import trends
+from app.api.routes.chatbot import chatbot
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -118,6 +119,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(properties.router, prefix=settings.API_V1_STR)
 app.include_router(ppt_exports.router, prefix=settings.API_V1_STR)
 app.include_router(trends.router, prefix=settings.API_V1_STR)
+app.include_router(chatbot.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")
