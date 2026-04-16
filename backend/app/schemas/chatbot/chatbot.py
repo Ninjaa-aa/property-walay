@@ -61,3 +61,9 @@ class ChatQueryResponse(BaseModel):
     text: Optional[str] = None
     filters: Optional[WebhookFilters] = None
     properties: Optional[list[WebhookProperty]] = None
+
+
+class TranscriptionResponse(BaseModel):
+    text: str = Field(..., description="Transcribed text from audio input")
+    language: Optional[str] = Field(None, description="Detected language code")
+    duration: Optional[float] = Field(None, description="Audio duration in seconds")

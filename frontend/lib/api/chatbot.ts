@@ -1,5 +1,14 @@
-import { apiGet, apiPost } from "./client";
+import { apiGet, apiPost, ApiClientError } from "./client";
 import type { ChatResponseItem, WebhookFilters } from "@/types/chatbot";
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+export interface TranscriptionResult {
+  text: string;
+  language?: string | null;
+  duration?: number | null;
+}
 
 export async function sendChatQuery(
   query: string
@@ -42,4 +51,30 @@ export async function loadMoreProperties({
   if (filters.listing_type) params.listing_type = filters.listing_type;
 
   return apiGet<PropertyListResponse>("/properties", params);
+}
+
+export async function transcribeAudio(
+  blob: Blob,
+  filename = "recording.webm"
+): Promise<TranscriptionResult> {
+  const form = new FormData();
+  form.append("file", blob, filename);
+
+  const response = await fetch(`${API_BASE_URL}/chatbot/transcribe`, {
+    method: "POST",
+    body: form,
+  });
+
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const data = await response.json();
+      detail = data.detail || detail;
+    } catch {
+      // not JSON
+    }
+    throw new ApiClientError(response.status, detail);
+  }
+
+  return response.json();
 }

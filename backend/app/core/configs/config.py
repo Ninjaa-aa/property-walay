@@ -41,6 +41,13 @@ class Settings(BaseSettings):
 
     # Meeting Configuration
     MEETING_WEBHOOK_URL: str = ""
+
+    # Whisper (local speech-to-text) Configuration
+    WHISPER_MODEL: str = "base"          # tiny|base|small|medium|large-v3
+    WHISPER_DEVICE: str = "cpu"          # cpu or cuda
+    WHISPER_COMPUTE_TYPE: str = "int8"   # int8 for fast CPU inference
+    WHISPER_MAX_AUDIO_MB: int = 10
+    WHISPER_MAX_DURATION_SECONDS: int = 60
     
     # Cache Configuration
     CACHE_TTL_SECONDS: int = 300  # 5 minutes default cache TTL

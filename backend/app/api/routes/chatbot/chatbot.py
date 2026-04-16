@@ -1,9 +1,14 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
 import httpx
 import logging
 
-from app.schemas.chatbot import ChatQueryRequest, ChatQueryResponse
+from app.schemas.chatbot import (
+    ChatQueryRequest,
+    ChatQueryResponse,
+    TranscriptionResponse,
+)
 from app.services.chatbot.chatbot_service import forward_query
+from app.services.chatbot.transcription_service import transcribe_audio
 
 logger = logging.getLogger(__name__)
 
@@ -35,3 +40,12 @@ async def chat_query(body: ChatQueryRequest):
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Could not reach chatbot service",
         )
+
+
+@router.post("/transcribe", response_model=TranscriptionResponse)
+async def transcribe(file: UploadFile = File(...)):
+    """
+    Accept an uploaded audio file, run local Whisper transcription,
+    and return the recognized text for the user to review before sending.
+    """
+    return await transcribe_audio(file)

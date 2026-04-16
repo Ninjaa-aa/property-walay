@@ -5,6 +5,7 @@ from app.schemas.chatbot.chatbot import (
     WebhookProperty,
     PropertyResultItem,
     TextResultItem,
+    TranscriptionResponse,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "WebhookProperty",
     "PropertyResultItem",
     "TextResultItem",
+    "TranscriptionResponse",
 ]
