@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { getProperties, getRecommendedProperties } from "@/lib/api/properties";
 import { ApiClientError } from "@/lib/api/client";
+import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import type { ApiProperty, PropertyListParams } from "@/types/api/property";
+
+const MAX_VIEWED_SIGNALS = 10;
 
 interface UsePropertiesReturn {
   properties: ApiProperty[];
@@ -108,18 +111,42 @@ export function useRecommendedProperties(
   const [error, setError] = useState<ApiClientError | null>(null);
   const fetchingRef = useRef(false);
 
-  const fetchRecommended = useCallback(async () => {
-    // Prevent duplicate requests
-    if (fetchingRef.current) {
-      return;
-    }
+  const sessions = useSearchHistoryStore((s) => s.sessions);
+  const activeSessionId = useSearchHistoryStore((s) => s.activeSessionId);
 
+  // Collect the most recently viewed property IDs across the active session
+  // first, then any other session, de-duplicated, capped to MAX_VIEWED_SIGNALS.
+  const viewedIds = useMemo(() => {
+    const seen = new Set<string>();
+    const ordered: string[] = [];
+    const pushFrom = (sessionId: string | null | undefined) => {
+      const session = sessions.find((s) => s.id === sessionId);
+      if (!session) return;
+      for (const v of session.viewedProperties) {
+        if (!seen.has(v.propertyId)) {
+          seen.add(v.propertyId);
+          ordered.push(v.propertyId);
+          if (ordered.length >= MAX_VIEWED_SIGNALS) return;
+        }
+      }
+    };
+    pushFrom(activeSessionId);
+    for (const s of sessions) {
+      if (ordered.length >= MAX_VIEWED_SIGNALS) break;
+      if (s.id !== activeSessionId) pushFrom(s.id);
+    }
+    return ordered;
+  }, [sessions, activeSessionId]);
+
+  const viewedKey = viewedIds.join(",");
+
+  const fetchRecommended = useCallback(async () => {
+    if (fetchingRef.current) return;
     fetchingRef.current = true;
     setLoading(true);
     setError(null);
-
     try {
-      const data = await getRecommendedProperties(limit);
+      const data = await getRecommendedProperties(limit, viewedIds);
       setProperties(data);
     } catch (err) {
       if (err instanceof ApiClientError) {
@@ -134,7 +161,9 @@ export function useRecommendedProperties(
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, [limit]);
+    // `viewedIds` is derived; `viewedKey` drives re-fetch when the list actually changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limit, viewedKey]);
 
   useEffect(() => {
     fetchRecommended();

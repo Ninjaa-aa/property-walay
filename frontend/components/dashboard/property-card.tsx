@@ -76,7 +76,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
             )}
           </div>
           <Button variant="ghost" className="mt-4 w-full" asChild>
-            <Link href={`/dashboard/properties/${property.id}`}>
+            <Link href={`/dashboard/search/${property.id}`}>
               View Details <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>

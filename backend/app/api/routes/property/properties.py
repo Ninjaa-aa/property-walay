@@ -19,6 +19,7 @@ from app.core.cache.cache import (
     set_cache,
     delete_cache_pattern,
 )
+from app.services.recommendation import recommendation_service
 
 router = APIRouter(prefix="/properties", tags=["properties"])
 
@@ -246,32 +247,100 @@ def delete_property(
     return None
 
 
+def _fetch_properties_ordered(
+    db: Session, ordered_ids: list[str]
+) -> list[Property]:
+    """Fetch properties by UUID list and preserve the ranking order."""
+    if not ordered_ids:
+        return []
+    rows = (
+        db.query(Property)
+        .filter(Property.our_id.in_(ordered_ids))
+        .all()
+    )
+    order = {pid: i for i, pid in enumerate(ordered_ids)}
+    rows.sort(key=lambda p: order.get(str(p.our_id), 10**9))
+    return rows
+
+
 @router.get("/search/recommended", response_model=list[PropertyResponse])
 def get_recommended_properties(
+    limit: int = Query(10, ge=1, le=50),
+    viewed_ids: list[UUID] = Query(
+        default_factory=list,
+        description=(
+            "UUIDs of properties the user has recently viewed. "
+            "When present, recommendations are content-based; otherwise we "
+            "fall back to the most recently updated listings."
+        ),
+    ),
+    db: Session = Depends(get_database),
+):
+    """
+    Content-based recommendations powered by the trained PyTorch embedding
+    model (`property_embeddings` table, cosine similarity over mean-pooled
+    viewed-item vectors).  Falls back to most-recently-updated when the
+    caller has no viewing history.
+    Cached for 2 minutes.
+    """
+    viewed_key = tuple(sorted(str(v) for v in viewed_ids))
+    cache_key = get_cache_key(
+        "properties:recommended",
+        limit=limit,
+        viewed=viewed_key,
+    )
+
+    cached_result = get_from_cache(cache_key)
+    if cached_result:
+        return [PropertyResponse(**item) for item in cached_result]
+
+    properties: list[Property] = []
+    if viewed_ids:
+        top_ids = recommendation_service.recommend_from_viewed(
+            db,
+            [str(v) for v in viewed_ids],
+            k=limit,
+        )
+        properties = _fetch_properties_ordered(db, top_ids)
+
+    if not properties:
+        properties = (
+            db.query(Property)
+            .order_by(Property.updated_at.desc())
+            .limit(limit)
+            .all()
+        )
+
+    result = [PropertyResponse.model_validate(p) for p in properties]
+    set_cache(cache_key, [p.model_dump() for p in result], ttl=120)
+    return result
+
+
+@router.get("/{property_id}/similar", response_model=list[PropertyResponse])
+def get_similar_properties(
+    property_id: UUID,
     limit: int = Query(10, ge=1, le=50),
     db: Session = Depends(get_database),
 ):
     """
-    Get recommended properties (currently returns most recently updated).
-    Cached for 2 minutes (shorter TTL since recommendations change more frequently).
-    TODO: Implement AI-based recommendations using RAG.
+    Return the most similar properties to the given property using
+    content-based cosine similarity on the trained embedding index.
     """
-    # Generate cache key
-    cache_key = get_cache_key("properties:recommended", limit=limit)
-    
-    # Try to get from cache
+    cache_key = get_cache_key(
+        "properties:similar",
+        property_id=str(property_id),
+        limit=limit,
+    )
+
     cached_result = get_from_cache(cache_key)
     if cached_result:
         return [PropertyResponse(**item) for item in cached_result]
-    
-    properties = db.query(Property).order_by(
-        Property.updated_at.desc()
-    ).limit(limit).all()
-    
+
+    top_ids = recommendation_service.recommend_similar(
+        db, str(property_id), k=limit
+    )
+    properties = _fetch_properties_ordered(db, top_ids)
     result = [PropertyResponse.model_validate(p) for p in properties]
-    
-    # Cache the result (shorter TTL for recommendations)
-    set_cache(cache_key, [p.model_dump() for p in result], ttl=120)  # 2 minutes
-    
+    set_cache(cache_key, [p.model_dump() for p in result], ttl=300)
     return result
 
