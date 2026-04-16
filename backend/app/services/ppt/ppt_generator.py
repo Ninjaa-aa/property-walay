@@ -3,6 +3,7 @@ PPT Generator Service
 Generates professional PowerPoint presentations for properties using python-pptx
 """
 import io
+import random
 import time
 import logging
 import math
@@ -16,89 +17,91 @@ from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 from PIL import Image
 import httpx
-from app.services.ppt import ppt_theme
+
+from app.services.ppt.templates import TEMPLATES, PPTTemplate
 
 logger = logging.getLogger(__name__)
+
 
 class PropertyPPTGenerator:
     """
     Generates professional PowerPoint presentations for properties.
-    Uses template-based approach for consistent branding.
+    A random visual template is chosen on each instantiation so every
+    export looks unique while carrying the same data.
     """
-    
+
     # Slide dimensions (16:9 widescreen)
     SLIDE_WIDTH = Inches(13.333)
     SLIDE_HEIGHT = Inches(7.5)
-    
-    # Brand colors (imported from shared theme)
-    PRIMARY_COLOR = ppt_theme.PRIMARY_COLOR
-    SECONDARY_COLOR = ppt_theme.SECONDARY_COLOR
-    ACCENT_COLOR = ppt_theme.ACCENT_COLOR
-    TEXT_COLOR = ppt_theme.TEXT_COLOR
-    LIGHT_TEXT = ppt_theme.LIGHT_TEXT
-    WHITE = ppt_theme.WHITE
-    DARK_BG = ppt_theme.DARK_BG
-    CARD_BG = ppt_theme.CARD_BG
-    
-    # Fonts
-    TITLE_FONT = ppt_theme.TITLE_FONT
-    BODY_FONT = ppt_theme.BODY_FONT
-    
-    def __init__(self):
-        """Initialize the PPT generator"""
+
+    def __init__(self, template_name: str = None):
+        """
+        Initialize the PPT generator.
+
+        Args:
+            template_name: Name of the template to use (from PPTTemplate.name).
+                           If None or not found, a random template is chosen.
+        """
         self.prs: Optional[Presentation] = None
-        
+        if template_name:
+            matched = next((t for t in TEMPLATES if t.name == template_name), None)
+            self.template: PPTTemplate = matched or random.choice(TEMPLATES)
+        else:
+            self.template: PPTTemplate = random.choice(TEMPLATES)
+
     def generate(self, property_data: dict, images: List[bytes] = None) -> io.BytesIO:
         """
         Generate a complete PPT presentation for a property.
-        
+
         Args:
             property_data: Dictionary containing property details
             images: List of image bytes (already optimized)
-            
+
         Returns:
             BytesIO object containing the PPTX file
         """
         start_time = time.time()
-        
+
         # Create new presentation (16:9 widescreen)
         self.prs = Presentation()
         self.prs.slide_width = self.SLIDE_WIDTH
         self.prs.slide_height = self.SLIDE_HEIGHT
-        
+
         # Generate slides
         self._create_title_slide(property_data, images[0] if images else None)
         self._create_overview_slide(property_data)
         self._create_details_slide(property_data)
         self._create_features_slide(property_data)
-        
+
         if images and len(images) > 1:
             self._create_gallery_slide(images[1:5])  # Max 4 gallery images
-            
+
         if property_data.get("latitude") and property_data.get("longitude"):
             self._create_location_slide(property_data)
-            
+
         self._create_contact_slide(property_data)
-        
+
         # Save to BytesIO
         output = io.BytesIO()
         self.prs.save(output)
         output.seek(0)
-        
+
         duration_ms = int((time.time() - start_time) * 1000)
-        logger.info(f"PPT generated in {duration_ms}ms for property {property_data.get('our_id')}")
-        
-        return output
-    
-    def _apply_background(self, slide, color: RGBColor = None):
-        """Apply a full-bleed background color to a slide."""
-        bg_shape = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE, 0, 0, self.SLIDE_WIDTH, self.SLIDE_HEIGHT
+        logger.info(
+            f"PPT generated in {duration_ms}ms for property "
+            f"{property_data.get('our_id')} [template={self.template.name}]"
         )
-        bg_shape.fill.solid()
-        bg_shape.fill.fore_color.rgb = color or self.DARK_BG
-        bg_shape.line.fill.background()
-        return bg_shape
+
+        return output
+
+    # ── Helpers ──────────────────────────────────────────────────
+
+    def _apply_background(self, slide, color: RGBColor = None):
+        """Apply a solid background color to a slide using the slide background API."""
+        bg = slide.background
+        fill = bg.fill
+        fill.solid()
+        fill.fore_color.rgb = color or self.template.slide_bg
 
     def _add_divider(self, slide, top_inches: float = 1):
         """Add a horizontal divider line."""
@@ -106,7 +109,7 @@ class PropertyPPTGenerator:
             MSO_SHAPE.RECTANGLE, Inches(0.5), Inches(top_inches), Inches(12.3), Inches(0.02)
         )
         line.fill.solid()
-        line.fill.fore_color.rgb = self.PRIMARY_COLOR
+        line.fill.fore_color.rgb = self.template.accent
         line.line.fill.background()
         return line
 
@@ -131,21 +134,21 @@ class PropertyPPTGenerator:
         tf = shape.text_frame
         tf.word_wrap = True
         tf.auto_size = None
-        
+
         p = tf.paragraphs[0]
         p.text = text
         p.font.size = Pt(font_size)
-        p.font.name = self.BODY_FONT
+        p.font.name = self.template.font_name
         p.font.bold = bold
-        p.font.color.rgb = font_color or self.TEXT_COLOR
+        p.font.color.rgb = font_color or self.template.body_text
         p.alignment = alignment
-        
+
         if fill_color:
             shape.fill.solid()
             shape.fill.fore_color.rgb = fill_color
-            
+
         return shape
-    
+
     def _add_rounded_rectangle(
         self,
         slide,
@@ -166,164 +169,252 @@ class PropertyPPTGenerator:
         shape.fill.solid()
         shape.fill.fore_color.rgb = fill_color
         shape.line.fill.background()  # No border
-        
+
         if text:
             tf = shape.text_frame
             tf.word_wrap = True
             p = tf.paragraphs[0]
             p.text = text
             p.font.size = Pt(font_size)
-            p.font.name = self.BODY_FONT
-            p.font.color.rgb = font_color or self.WHITE
+            p.font.name = self.template.font_name
+            p.font.color.rgb = font_color or self.template.white
             p.alignment = PP_ALIGN.CENTER
             tf.anchor = MSO_ANCHOR.MIDDLE
-            
+
         return shape
-    
+
+    def _format_heading(self, text: str) -> str:
+        """Apply template-specific heading formatting (e.g. uppercase)."""
+        return text.upper() if self.template.heading_uppercase else text
+
+    def _add_card_border(self, slide, left: float, top: float,
+                         width: float, height: float):
+        """
+        Draw the template-specific decorative border for metric / section cards.
+        - Dark Luxury: full border drawn via shape.line
+        - Clean Minimal: 3 pt blue left-side bar
+        - Modern Gradient: 3 pt teal top bar
+        Returns the border shape (or None).
+        """
+        t = self.template
+        if t.card_left_border and t.card_border_color:
+            # Thin rectangle on the left edge
+            bar_w = t.card_border_width_pt / 72  # convert pt to inches
+            bar = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                Inches(left), Inches(top),
+                Inches(bar_w), Inches(height),
+            )
+            bar.fill.solid()
+            bar.fill.fore_color.rgb = t.card_border_color
+            bar.line.fill.background()
+            return bar
+
+        if t.card_top_border and t.card_border_color:
+            bar_h = t.card_border_width_pt / 72
+            bar = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                Inches(left), Inches(top),
+                Inches(width), Inches(bar_h),
+            )
+            bar.fill.solid()
+            bar.fill.fore_color.rgb = t.card_border_color
+            bar.line.fill.background()
+            return bar
+
+        return None
+
+    def _style_card_shape(self, shape):
+        """Apply full-border styling to a card shape (Dark Luxury pattern)."""
+        t = self.template
+        if (
+            t.card_border_color
+            and t.card_border_width_pt > 0
+            and not t.card_left_border
+            and not t.card_top_border
+        ):
+            shape.line.color.rgb = t.card_border_color
+            shape.line.width = Pt(t.card_border_width_pt)
+
+    # ── Slide builders ──────────────────────────────────────────
+
     def _create_title_slide(self, property_data: dict, hero_image: bytes = None):
         """Create the title/cover slide"""
+        t = self.template
         slide_layout = self.prs.slide_layouts[6]  # Blank layout
         slide = self.prs.slides.add_slide(slide_layout)
-        
-        # Background
-        self._apply_background(slide, self.DARK_BG)
-        
+
+        # Slide background
+        self._apply_background(slide)
+
+        # Text panel background rectangle
+        panel = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            Inches(t.title_panel_left), Inches(t.title_panel_top),
+            Inches(t.title_panel_width), Inches(t.title_panel_height),
+        )
+        panel.fill.solid()
+        panel.fill.fore_color.rgb = t.title_panel_color
+        panel.line.fill.background()
+
+        # Optional accent line at the top of the text panel (Modern Gradient)
+        if t.title_accent_line:
+            accent_h = t.title_accent_line_height_pt / 72
+            accent_line = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                Inches(t.title_panel_left), Inches(t.title_panel_top),
+                Inches(t.title_panel_width), Inches(accent_h),
+            )
+            accent_line.fill.solid()
+            accent_line.fill.fore_color.rgb = t.accent
+            accent_line.line.fill.background()
+
         # Hero image (if available)
         if hero_image:
             try:
                 img_stream = io.BytesIO(hero_image)
-                # Add image on the right side
                 slide.shapes.add_picture(
-                    img_stream, Inches(6.5), Inches(0.5),
-                    width=Inches(6.5), height=Inches(6.5)
+                    img_stream,
+                    Inches(t.title_hero_left), Inches(t.title_hero_top),
+                    width=Inches(t.title_hero_width),
+                    height=Inches(t.title_hero_height),
                 )
             except Exception as e:
                 logger.warning(f"Failed to add hero image: {e}")
-        
-        # Property title
+
+        # Property title — use template font size and a tall enough box for long titles
         title = property_data.get("title", "Property Presentation")
         self._add_shape_with_text(
-            slide, 0.5, 1.8, 5.7, 2.0,
+            slide, t.title_text_left, t.title_text_top,
+            t.title_text_width, t.title_text_height,
             title,
-            font_size=30, font_color=self.WHITE, bold=True
+            font_size=t.title_font_size, font_color=t.body_text, bold=True
         )
-        
-        # Location
+
+        # Location — placed at the template's safe absolute Y so it never overlaps the title
         location = property_data.get("area_name", "")
         if location:
             self._add_shape_with_text(
-                slide, 0.5, 3.8, 5.7, 0.6,
+                slide, t.title_text_left, t.title_loc_top,
+                t.title_text_width, 0.6,
                 f"📍 {location}",
-                font_size=18, font_color=self.PRIMARY_COLOR, bold=False
+                font_size=14, font_color=t.accent, bold=False
             )
-        
-        # Price
+
+        # Price badge — placed at its own safe absolute Y
         price = property_data.get("current_price")
         currency = property_data.get("currency", "PKR")
         if price:
             formatted_price = self._format_price(price, currency)
             self._add_rounded_rectangle(
-                slide, 0.5, 4.3, 2.5, 0.6,
-                self.PRIMARY_COLOR,
+                slide, t.title_text_left, t.title_price_top,
+                2.5, 0.55,
+                t.accent,
                 formatted_price,
-                font_size=20, font_color=self.WHITE
+                font_size=16, font_color=t.white
             )
-        
-        # PropertyWalay branding
+
+        # PropertyWalay branding — fixed at very bottom of slide, small and unobtrusive
         self._add_shape_with_text(
-            slide, 0.5, 6.5, 3, 0.4,
+            slide, 0.5, 7.1, 5, 0.35,
             "PropertyWalay - AI-Powered Real Estate",
-            font_size=10, font_color=self.LIGHT_TEXT
+            font_size=9, font_color=t.muted_text
         )
-        
-        # Date
+
+        # Date — bottom-right corner
         self._add_shape_with_text(
-            slide, 10, 6.8, 3, 0.3,
+            slide, 9.5, 7.1, 3.5, 0.35,
             datetime.now().strftime("%B %d, %Y"),
-            font_size=10, font_color=self.LIGHT_TEXT,
+            font_size=9, font_color=t.muted_text,
             alignment=PP_ALIGN.RIGHT
         )
-    
+
     def _create_overview_slide(self, property_data: dict):
         """Create property overview slide with key stats"""
+        t = self.template
         slide_layout = self.prs.slide_layouts[6]  # Blank
         slide = self.prs.slides.add_slide(slide_layout)
-        
+
         # Background
-        self._apply_background(slide, self.DARK_BG)
-        
+        self._apply_background(slide)
+
         # Title
         self._add_shape_with_text(
             slide, 0.5, 0.3, 12, 0.8,
-            "Property Overview",
-            font_size=28, bold=True, font_color=self.TEXT_COLOR
+            self._format_heading("Property Overview"),
+            font_size=28, bold=True, font_color=t.accent
         )
-        
+
         # Horizontal line
         self._add_divider(slide, top_inches=1)
-        
+
         # Key stats boxes
         stats = self._get_property_stats(property_data)
         box_width = 2.8
         box_height = 1.5
         start_x = 0.5
         gap = 0.3
-        
+
         for i, (label, value, icon) in enumerate(stats[:4]):
             x = start_x + i * (box_width + gap)
-            
+
             # Stat box
             box = self._add_rounded_rectangle(
                 slide, x, 1.5, box_width, box_height,
-                self.CARD_BG  # Dark card
+                t.card_bg
             )
-            
+            self._style_card_shape(box)
+
+            # Decorative per-side border
+            self._add_card_border(slide, x, 1.5, box_width, box_height)
+
             # Icon and value
             self._add_shape_with_text(
                 slide, x + 0.2, 1.7, box_width - 0.4, 0.5,
                 f"{icon} {value}",
-                font_size=20, bold=True, font_color=self.WHITE
+                font_size=20, bold=True, font_color=t.card_number_color
             )
-            
+
             # Label
             self._add_shape_with_text(
                 slide, x + 0.2, 2.3, box_width - 0.4, 0.4,
                 label,
-                font_size=12, font_color=self.LIGHT_TEXT
+                font_size=12, font_color=t.card_label_color
             )
-        
+
         # Property description
         self._add_shape_with_text(
             slide, 0.5, 3.5, 12.3, 0.5,
-            "Description",
-            font_size=18, bold=True, font_color=self.TEXT_COLOR
+            self._format_heading("Description"),
+            font_size=18, bold=True, font_color=t.accent
         )
-        
+
         description = self._generate_description(property_data)
         self._add_shape_with_text(
             slide, 0.5, 4.1, 12.3, 2.5,
             description,
-            font_size=14, font_color=self.LIGHT_TEXT
+            font_size=14, font_color=t.muted_text
         )
-    
+
     def _create_details_slide(self, property_data: dict):
         """Create detailed property information slide"""
+        t = self.template
         slide_layout = self.prs.slide_layouts[6]
         slide = self.prs.slides.add_slide(slide_layout)
-        
+
         # Background
-        self._apply_background(slide, self.DARK_BG)
-        
+        self._apply_background(slide)
+
         # Title
         self._add_shape_with_text(
             slide, 0.5, 0.3, 12, 0.8,
-            "Property Details",
-            font_size=28, bold=True, font_color=self.TEXT_COLOR
+            self._format_heading("Property Details"),
+            font_size=28, bold=True, font_color=t.accent
         )
-        
+
         # Horizontal line
         self._add_divider(slide, top_inches=1)
-        
+
         # Two columns of details
         details_left = [
             ("Property Type", property_data.get("prop_type", "N/A")),
@@ -331,65 +422,66 @@ class PropertyPPTGenerator:
             ("Bedrooms", str(property_data.get("beds", "N/A"))),
             ("Bathrooms", str(property_data.get("baths", "N/A"))),
         ]
-        
+
         area_size = property_data.get("area_size")
         area_unit = property_data.get("area_unit", "")
         area_display = f"{area_size} {area_unit}" if area_size else "N/A"
-        
+
         price = property_data.get("current_price")
         currency = property_data.get("currency", "PKR")
         price_display = self._format_price(price, currency) if price else "N/A"
-        
+
         details_right = [
             ("Area Size", area_display),
             ("Price", price_display),
             ("Source", property_data.get("source", "N/A").capitalize()),
             ("Property ID", property_data.get("source_human_id") or str(property_data.get("our_id", ""))[:8]),
         ]
-        
+
         # Left column
         y = 1.5
         for label, value in details_left:
             self._add_shape_with_text(
                 slide, 0.5, y, 2.5, 0.4,
                 label,
-                font_size=12, font_color=self.LIGHT_TEXT
+                font_size=12, font_color=t.muted_text
             )
             self._add_shape_with_text(
                 slide, 3.2, y, 3, 0.4,
                 str(value),
-                font_size=14, bold=True, font_color=self.WHITE
+                font_size=14, bold=True, font_color=t.body_text
             )
             y += 0.7
-        
+
         # Right column
         y = 1.5
         for label, value in details_right:
             self._add_shape_with_text(
                 slide, 7, y, 2.5, 0.4,
                 label,
-                font_size=12, font_color=self.LIGHT_TEXT
+                font_size=12, font_color=t.muted_text
             )
             self._add_shape_with_text(
                 slide, 9.7, y, 3, 0.4,
                 str(value),
-                font_size=14, bold=True, font_color=self.WHITE
+                font_size=14, bold=True, font_color=t.body_text
             )
             y += 0.7
-        
+
         # Price per unit (if applicable)
         if price and area_size:
             price_per_unit = price / area_size
             self._add_shape_with_text(
                 slide, 0.5, 5, 6, 0.5,
                 f"Price per {area_unit}: {self._format_price(price_per_unit, currency)}",
-                font_size=14, font_color=self.PRIMARY_COLOR
+                font_size=14, font_color=t.accent
             )
 
     def _create_features_slide(self, property_data: dict):
         """
         Create features/amenities slide if scraped data is available.
         """
+        t = self.template
         scraped_features = property_data.get("scraped_features") or {}
         scraped_amenities = property_data.get("scraped_amenities") or {}
 
@@ -415,14 +507,14 @@ class PropertyPPTGenerator:
             slide_layout = self.prs.slide_layouts[6]
             slide = self.prs.slides.add_slide(slide_layout)
 
-            # Dark background for consistency
-            self._apply_background(slide, self.DARK_BG)
+            # Background
+            self._apply_background(slide)
 
             # Title
             self._add_shape_with_text(
                 slide, 0.5, 0.3, 12, 0.8,
-                "Features & Amenities",
-                font_size=28, bold=True, font_color=self.WHITE
+                self._format_heading("Features & Amenities"),
+                font_size=28, bold=True, font_color=t.accent
             )
 
             # Horizontal line
@@ -447,14 +539,18 @@ class PropertyPPTGenerator:
                     Inches(card_height),
                 )
                 card.fill.solid()
-                card.fill.fore_color.rgb = self.CARD_BG
+                card.fill.fore_color.rgb = t.card_bg
                 card.line.fill.background()
+                self._style_card_shape(card)
+
+                # Decorative border
+                self._add_card_border(slide, x, y, col_width, card_height)
 
                 # Section title
                 self._add_shape_with_text(
                     slide, x + 0.2, y + 0.2, col_width - 0.4, 0.4,
                     title,
-                    font_size=16, bold=True, font_color=self.WHITE
+                    font_size=16, bold=True, font_color=t.body_text
                 )
 
                 # Bullet list (cap to 10 items to avoid overflow)
@@ -462,24 +558,25 @@ class PropertyPPTGenerator:
                 self._add_shape_with_text(
                     slide, x + 0.2, y + 0.7, col_width - 0.4, card_height - 0.9,
                     bullets_text,
-                    font_size=12, font_color=self.LIGHT_TEXT
+                    font_size=12, font_color=t.muted_text
                 )
-    
+
     def _create_gallery_slide(self, images: List[bytes]):
         """Create image gallery slide"""
+        t = self.template
         slide_layout = self.prs.slide_layouts[6]
         slide = self.prs.slides.add_slide(slide_layout)
-        
+
         # Background
-        self._apply_background(slide, self.DARK_BG)
-        
+        self._apply_background(slide)
+
         # Title
         self._add_shape_with_text(
             slide, 0.5, 0.3, 12, 0.8,
-            "Property Gallery",
-            font_size=28, bold=True, font_color=self.TEXT_COLOR
+            self._format_heading("Property Gallery"),
+            font_size=28, bold=True, font_color=t.accent
         )
-        
+
         # Grid of images (2x2)
         positions = [
             (0.5, 1.2, 6, 3),
@@ -487,7 +584,7 @@ class PropertyPPTGenerator:
             (0.5, 4.4, 6, 3),
             (6.8, 4.4, 6, 3),
         ]
-        
+
         for i, img_bytes in enumerate(images[:4]):
             if i >= len(positions):
                 break
@@ -501,30 +598,31 @@ class PropertyPPTGenerator:
                 )
             except Exception as e:
                 logger.warning(f"Failed to add gallery image {i}: {e}")
-    
+
     def _create_location_slide(self, property_data: dict):
         """Create location slide with map placeholder"""
+        t = self.template
         slide_layout = self.prs.slide_layouts[6]
         slide = self.prs.slides.add_slide(slide_layout)
-        
+
         # Background
-        self._apply_background(slide, self.DARK_BG)
-        
+        self._apply_background(slide)
+
         # Title
         self._add_shape_with_text(
             slide, 0.5, 0.3, 12, 0.8,
-            "Location",
-            font_size=28, bold=True, font_color=self.TEXT_COLOR
+            self._format_heading("Location"),
+            font_size=28, bold=True, font_color=t.accent
         )
-        
+
         # Location details
         location = property_data.get("area_name", "Location not specified")
         self._add_shape_with_text(
             slide, 0.5, 1.2, 12, 0.5,
             f"📍 {location}",
-            font_size=18, font_color=self.PRIMARY_COLOR
+            font_size=18, font_color=t.accent
         )
-        
+
         # Map or placeholder
         lat = property_data.get("latitude")
         lng = property_data.get("longitude")
@@ -571,7 +669,7 @@ class PropertyPPTGenerator:
                 map_height,
             )
             map_placeholder.fill.solid()
-            map_placeholder.fill.fore_color.rgb = self.CARD_BG
+            map_placeholder.fill.fore_color.rgb = t.card_bg
             map_placeholder.line.color.rgb = RGBColor(55, 65, 81)  # subtle border
 
             if lat is not None and lng is not None:
@@ -583,65 +681,68 @@ class PropertyPPTGenerator:
                     coord_text = "Map not available"
             else:
                 coord_text = "Map not available\n(Coordinates not provided)"
-            
+
             self._add_shape_with_text(
                 slide, 5, 3.8, 4, 1.4,
                 coord_text,
-                font_size=14, font_color=self.LIGHT_TEXT,
+                font_size=14, font_color=t.muted_text,
                 alignment=PP_ALIGN.CENTER
             )
-    
+
     def _create_contact_slide(self, property_data: dict):
         """Create contact/CTA slide"""
+        t = self.template
         slide_layout = self.prs.slide_layouts[6]
         slide = self.prs.slides.add_slide(slide_layout)
-        
+
         # Background
-        self._apply_background(slide, self.DARK_BG)
-        
+        self._apply_background(slide)
+
         # Title
         self._add_shape_with_text(
             slide, 0.5, 1.5, 12.3, 1,
             "Interested in this property?",
-            font_size=36, bold=True, font_color=self.WHITE,
+            font_size=36, bold=True, font_color=t.body_text,
             alignment=PP_ALIGN.CENTER
         )
-        
+
         # Contact info
         poc_name = property_data.get("poc_name") or "Contact Agent"
         poc_number = property_data.get("poc_number") or "Phone not provided"
-        
+
         self._add_shape_with_text(
             slide, 0.5, 3, 12.3, 0.6,
             f"Agent: {poc_name}",
-            font_size=20, font_color=self.WHITE,
+            font_size=20, font_color=t.body_text,
             alignment=PP_ALIGN.CENTER
         )
-        
+
         if poc_number:
             self._add_shape_with_text(
                 slide, 0.5, 3.7, 12.3, 0.6,
                 f"📞 {poc_number}",
-                font_size=18, font_color=self.PRIMARY_COLOR,
+                font_size=18, font_color=t.accent,
                 alignment=PP_ALIGN.CENTER
             )
-        
+
         # CTA Button
         self._add_rounded_rectangle(
             slide, 4.5, 5, 4.3, 0.8,
-            self.PRIMARY_COLOR,
+            t.accent,
             "Schedule a Visit",
-            font_size=18, font_color=self.WHITE
+            font_size=18, font_color=t.white
         )
-        
+
         # Footer
         self._add_shape_with_text(
             slide, 0.5, 6.8, 12.3, 0.4,
             "Generated by PropertyWalay - Your AI-Powered Real Estate Assistant",
-            font_size=10, font_color=self.LIGHT_TEXT,
+            font_size=10, font_color=t.muted_text,
             alignment=PP_ALIGN.CENTER
         )
-    
+
+    # ── Data helpers (unchanged) ─────────────────────────────────
+
     def _get_property_stats(self, property_data: dict) -> List[tuple]:
         """Get key property stats for overview with sensible fallbacks."""
         stats = []
@@ -679,7 +780,7 @@ class PropertyPPTGenerator:
             stats.append(("Info", "Not available", "ℹ️"))
 
         return stats[:4]
-    
+
     def _generate_description(self, property_data: dict) -> str:
         """Generate a property description resilient to missing fields."""
         parts = []
@@ -724,7 +825,7 @@ class PropertyPPTGenerator:
             description += f" Listed on {source.capitalize()}."
 
         return description or "Property details are not available."
-    
+
     def _format_price(self, price: float, currency: str = "PKR") -> str:
         """Format price with currency"""
         if price >= 10000000:  # 1 Crore
@@ -744,7 +845,7 @@ class PropertyPPTGenerator:
         try:
             lat = float(lat)
             lng = float(lng)
-            
+
             # Validate coordinates (rough bounds for Pakistan, but allow wider range)
             if not (-90.0 <= lat <= 90.0) or not (-180.0 <= lng <= 180.0):
                 logger.warning(f"Coordinates out of valid range: lat={lat}, lng={lng}")
@@ -752,7 +853,7 @@ class PropertyPPTGenerator:
         except (ValueError, TypeError) as e:
             logger.warning(f"Invalid coordinates: lat={lat}, lng={lng}, error={e}")
             return None
-        
+
         # List of map services to try (in order of preference)
         zoom = 15
         map_services = [
@@ -767,12 +868,12 @@ class PropertyPPTGenerator:
                 "name": "OpenStreetMap Tile"
             }
         ]
-        
+
         # Try each service until one works
         for service in map_services:
             try:
                 logger.info(f"Trying {service['name']} for map at {lat}, {lng}")
-                
+
                 # Use sync httpx client with proper headers and longer timeout
                 with httpx.Client(timeout=15.0, follow_redirects=True) as client:
                     resp = client.get(
@@ -784,7 +885,7 @@ class PropertyPPTGenerator:
                         }
                     )
                     resp.raise_for_status()
-                    
+
                     # Verify it's actually an image
                     content_type = resp.headers.get("content-type", "").lower()
                     if "image" in content_type and len(resp.content) > 100:
@@ -793,7 +894,7 @@ class PropertyPPTGenerator:
                     else:
                         logger.warning(f"Invalid image response from {service['name']}: content-type={content_type}, size={len(resp.content)}")
                         continue
-                        
+
             except httpx.TimeoutException:
                 logger.warning(f"Map fetch from {service['name']} timed out")
                 continue
@@ -807,7 +908,7 @@ class PropertyPPTGenerator:
             except Exception as e:
                 logger.warning(f"Failed to fetch map from {service['name']}: {type(e).__name__}: {e}")
                 continue
-        
+
         # All services failed
         logger.warning(f"All map services failed for coordinates {lat}, {lng}")
         return None
@@ -815,19 +916,19 @@ class PropertyPPTGenerator:
 
 class ImageOptimizer:
     """Handles image downloading and optimization for PPT"""
-    
+
     MAX_WIDTH = 1920
     QUALITY = 85
     TIMEOUT = 10
-    
+
     @staticmethod
     async def fetch_and_optimize(url: str) -> Optional[bytes]:
         """
         Download and optimize an image from URL.
-        
+
         Args:
             url: Image URL to download
-            
+
         Returns:
             Optimized image bytes or None if failed
         """
@@ -835,16 +936,16 @@ class ImageOptimizer:
             async with httpx.AsyncClient() as client:
                 response = await client.get(url, timeout=ImageOptimizer.TIMEOUT)
                 response.raise_for_status()
-                
+
             # Open and optimize
             img = Image.open(io.BytesIO(response.content))
-            
+
             # Resize if too large
             if img.width > ImageOptimizer.MAX_WIDTH:
                 ratio = ImageOptimizer.MAX_WIDTH / img.width
                 new_size = (ImageOptimizer.MAX_WIDTH, int(img.height * ratio))
                 img = img.resize(new_size, Image.Resampling.LANCZOS)
-            
+
             # Convert to RGB if needed
             if img.mode in ('RGBA', 'LA', 'P'):
                 # Create white background for transparency
@@ -855,36 +956,35 @@ class ImageOptimizer:
                 img = background
             elif img.mode != 'RGB':
                 img = img.convert('RGB')
-            
+
             # Save optimized
             output = io.BytesIO()
             img.save(output, format='JPEG', quality=ImageOptimizer.QUALITY, optimize=True)
             output.seek(0)
-            
+
             return output.getvalue()
-            
+
         except Exception as e:
             logger.warning(f"Failed to fetch/optimize image {url}: {e}")
             return None
-    
+
     @staticmethod
     async def fetch_multiple(urls: List[str], max_images: int = 5) -> List[bytes]:
         """
         Fetch and optimize multiple images concurrently.
-        
+
         Args:
             urls: List of image URLs
             max_images: Maximum number of images to fetch
-            
+
         Returns:
             List of optimized image bytes
         """
         import asyncio
-        
+
         urls = urls[:max_images]
         tasks = [ImageOptimizer.fetch_and_optimize(url) for url in urls]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         # Filter out None and exceptions
         return [r for r in results if isinstance(r, bytes)]
-

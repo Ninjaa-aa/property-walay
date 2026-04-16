@@ -14,9 +14,9 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_database
-from app.models.ppt_export import PPTExport, PPTExportStatus
-from app.models.property import Property
-from app.schemas.ppt_export import (
+from app.models.ppt.ppt_export import PPTExport, PPTExportStatus
+from app.models.property.property import Property
+from app.schemas.ppt.ppt_export import (
     PPTExportRequest,
     PPTExportResponse,
     PPTExportJobResponse,
@@ -24,8 +24,8 @@ from app.schemas.ppt_export import (
     PPTExportActivityResponse,
     PPTExportStatus as PPTExportStatusSchema,
 )
-from app.services.ppt_generator import PropertyPPTGenerator, ImageOptimizer
-from app.core.cache import get_cache_key, get_from_cache, set_cache
+from app.services.ppt.ppt_generator import PropertyPPTGenerator, ImageOptimizer
+from app.core.cache.cache import get_cache_key, get_from_cache, set_cache
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +183,7 @@ async def generate_ppt(
     image_urls = _extract_image_urls(property_obj.images)
     
     # Get database URL for background task
-    from app.core.config import settings
+    from app.core.configs.config import settings
     db_url = settings.DATABASE_URL
     
     # Schedule background task

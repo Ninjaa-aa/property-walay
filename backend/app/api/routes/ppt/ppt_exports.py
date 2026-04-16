@@ -3,6 +3,7 @@ PPT Export API Routes
 Endpoints for generating and managing property PPT exports
 """
 import asyncio
+import random
 import time
 import logging
 from uuid import UUID
@@ -25,6 +26,7 @@ from app.schemas.ppt.ppt_export import (
     PPTExportStatus as PPTExportStatusSchema,
 )
 from app.services.ppt.ppt_generator import PropertyPPTGenerator, ImageOptimizer
+from app.services.ppt.templates import TEMPLATES
 from app.services.ppt.scrape_enrich import enrich_property_from_source
 from app.utils.image_utils import clean_image_url
 from app.core.cache.cache import get_cache_key, get_from_cache, set_cache
@@ -72,39 +74,9 @@ def _get_property_last_updated(property_obj: Property) -> Optional[datetime]:
     )
 
 
-def _get_reusable_export(
-    db: Session, property_obj: Property
-) -> Optional[PPTExport]:
-    """
-    Return a reusable completed export if it is newer than the property's last update
-    and the cached file is still available.
-    """
-    last_updated = _get_property_last_updated(property_obj)
-
-    existing = (
-        db.query(PPTExport)
-        .filter(
-            PPTExport.property_id == property_obj.our_id,
-            PPTExport.status == PPTExportStatus.COMPLETED.value,
-        )
-        .order_by(PPTExport.completed_at.desc())
-        .first()
-    )
-
-    if not existing or not existing.completed_at:
-        return None
-
-    # If property has never been updated, or export is newer/equal to last update
-    if last_updated and existing.completed_at < last_updated:
-        return None
-
-    # Ensure cached file is still present; if not, force regeneration
-    cache_key = f"ppt:file:{existing.id}"
-    cached_hex = get_from_cache(cache_key)
-    if not cached_hex:
-        return None
-
-    return existing
+def _template_cache_key(property_id: UUID, template_name: str) -> str:
+    """Cache key that maps a (property, template) pair to a completed export_id."""
+    return f"ppt:template:{property_id}:{template_name}"
 
 
 async def _generate_ppt_task(
@@ -112,6 +84,7 @@ async def _generate_ppt_task(
     property_data: dict,
     image_urls: list[str],
     db_url: str,
+    template_name: str = None,
 ):
     """
     Background task to generate PPT.
@@ -142,9 +115,10 @@ async def _generate_ppt_task(
         if image_urls:
             images = await ImageOptimizer.fetch_multiple(image_urls, max_images=5)
         
-        # Generate PPT
-        generator = PropertyPPTGenerator()
+        # Generate PPT — pin to the chosen template so the correct style is used
+        generator = PropertyPPTGenerator(template_name=template_name)
         ppt_stream = generator.generate(property_data, images)
+        used_template = generator.template.name
         
         # Calculate file size
         ppt_stream.seek(0, 2)  # Seek to end
@@ -156,10 +130,18 @@ async def _generate_ppt_task(
         safe_title = "".join(c for c in property_title if c.isalnum() or c in (' ', '-', '_'))[:50]
         file_name = f"{safe_title}_{export_id.hex[:8]}.pptx"
         
-        # For now, we'll store the PPT in cache (in production, use cloud storage)
+        # Store the PPT bytes in cache (1-hour TTL)
         cache_key = f"ppt:file:{export_id}"
         ppt_bytes = ppt_stream.getvalue()
-        set_cache(cache_key, ppt_bytes.hex(), ttl=3600)  # 1 hour cache
+        set_cache(cache_key, ppt_bytes.hex(), ttl=3600)
+
+        # Store the per-template mapping: (property_id, template) → export_id
+        # TTL matches the file cache so both expire together.
+        property_id = property_data.get("our_id")
+        if property_id and used_template:
+            tpl_key = _template_cache_key(property_id, used_template)
+            set_cache(tpl_key, str(export_id), ttl=3600)
+            logger.info(f"Cached template mapping: {tpl_key} → {export_id}")
         
         # Update export record
         duration_ms = int((time.time() - start_time) * 1000)
@@ -206,16 +188,28 @@ async def generate_ppt(
             detail=f"Property with ID {request.property_id} not found"
         )
 
-    # Reuse an existing completed export if it is up-to-date
-    reusable_export = _get_reusable_export(db, property_obj)
-    if reusable_export:
-        return PPTExportJobResponse(
-            job_id=reusable_export.id,
-            status=PPTExportStatusSchema.COMPLETED,
-            message="PPT already generated and up-to-date; reusing existing export.",
-        )
-    
-    # Create export record
+    # Pick a random template for this request.
+    chosen_template = random.choice(TEMPLATES)
+    template_name = chosen_template.name
+
+    # Check if this (property, template) combo was already generated and is still cached.
+    tpl_key = _template_cache_key(str(request.property_id), template_name)
+    cached_export_id = get_from_cache(tpl_key)
+    if cached_export_id:
+        # Verify the file bytes are still alive in cache too
+        file_key = f"ppt:file:{cached_export_id}"
+        if get_from_cache(file_key):
+            logger.info(
+                f"Cache hit for property={request.property_id} "
+                f"template={template_name} → reusing export {cached_export_id}"
+            )
+            return PPTExportJobResponse(
+                job_id=UUID(cached_export_id),
+                status=PPTExportStatusSchema.COMPLETED,
+                message=f"Reusing cached '{template_name}' export.",
+            )
+
+    # No cache hit — create a new export record and queue generation.
     export = PPTExport(
         user_id=user_id,
         property_id=request.property_id,
@@ -284,12 +278,13 @@ async def generate_ppt(
         property_data,
         image_urls,
         db_url,
+        template_name,
     )
     
     return PPTExportJobResponse(
         job_id=export.id,
         status=PPTExportStatusSchema.QUEUED,
-        message="PPT generation started. Poll the status endpoint for updates.",
+        message=f"PPT generation started with '{template_name}' template. Poll the status endpoint for updates.",
     )
 
 
