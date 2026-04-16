@@ -1,5 +1,6 @@
 import httpx
 import logging
+import re
 from typing import Any
 
 from app.core.configs.config import settings
@@ -8,6 +9,24 @@ from app.schemas.chatbot import ChatQueryResponse
 logger = logging.getLogger(__name__)
 
 WEBHOOK_TIMEOUT = 30.0
+
+
+def _clean_text_response(value: Any) -> str:
+    """Remove webhook labels/debug text from plain text responses."""
+    if not isinstance(value, str):
+        return ""
+
+    text = value.strip()
+    text = re.sub(r"^\s*Response:\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"^\s*Query:\s*.*$", "", text, flags=re.IGNORECASE | re.MULTILINE)
+    text = re.sub(
+        r"^\s*NON_PROPERTY_QUERY\s*$",
+        "",
+        text,
+        flags=re.IGNORECASE | re.MULTILINE,
+    )
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
 
 
 async def forward_query(query: str) -> list[ChatQueryResponse]:
@@ -41,10 +60,13 @@ def _normalize_response(raw: list[dict[str, Any]]) -> list[ChatQueryResponse]:
                 )
             )
         elif "Response" in item:
+            cleaned_text = _clean_text_response(item["Response"])
+            if not cleaned_text:
+                continue
             results.append(
                 ChatQueryResponse(
                     type="text",
-                    text=item["Response"],
+                    text=cleaned_text,
                 )
             )
         else:
