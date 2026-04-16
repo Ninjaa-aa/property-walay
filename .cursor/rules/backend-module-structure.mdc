@@ -1,0 +1,24 @@
+---
+description: Enforce backend module folder conventions
+alwaysApply: true
+---
+
+# Backend Module Structure
+
+For any new module `<module>` (example: `ppt`, `property`, `trends`):
+
+- API routes: `backend/app/api/routes/<module>/`
+  - route code lives in files inside this folder (example: `ppt_exports.py`, `properties.py`)
+  - do NOT create duplicate route modules at `backend/app/api/routes/<module>_*.py` (outside the `<module>/` folder)
+- Router wiring: update `backend/app/main.py` to include:
+  - `from app.api.routes.<module> import <module_file>`
+  - `app.include_router(<module_file>.router, prefix=settings.API_V1_STR)`
+- Models: `backend/app/models/<module>/` (SQLAlchemy models)
+- Schemas: `backend/app/schemas/<module>/` (Pydantic request/response)
+- Services: `backend/app/services/<module>/` for non-trivial business logic / external calls used by routes
+  - if the module has no special logic yet, keep it in routes for now, but move it into `services/<module>/` when it grows
+- Shared helpers: `backend/app/utils/` only for cross-cutting utilities used by multiple modules
+
+# Single Source of Truth
+
+Never keep two copies of the same “routes entrypoint” (like both `routes/ppt_exports.py` and `routes/ppt/ppt_exports.py`).

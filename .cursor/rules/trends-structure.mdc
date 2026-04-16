@@ -1,0 +1,16 @@
+---
+description: Enforce trends module structure
+alwaysApply: true
+---
+
+# Trends Module Structure
+
+- API routes: `backend/app/api/routes/trends/`
+  - route file: `trends.py` (expects `router = APIRouter(...)`)
+  - router is wired from `backend/app/main.py` via `from app.api.routes.trends import trends`
+- Models: `backend/app/models/trends/`
+- Schemas: `backend/app/schemas/trends/`
+- Services: `backend/app/services/trends/`
+  - create only when trends logic grows beyond DB queries + caching inside routes
+- Shared helpers: `backend/app/utils/` (only cross-cutting)
+

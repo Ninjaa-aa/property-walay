@@ -1,0 +1,15 @@
+---
+description: Enforce PPT folder/module structure
+alwaysApply: true
+---
+
+# PPT Folder Structure
+
+- Keep all PPT export endpoints in `backend/app/api/routes/ppt/` (module: `ppt_exports.py`), imported as `from app.api.routes.ppt import ppt_exports` in `backend/app/main.py`.
+- Do not create duplicate route modules like `backend/app/api/routes/ppt_exports.py` (keep only the `routes/ppt/` version).
+- Keep PPT generation/rendering logic in `backend/app/services/ppt/`:
+  - `ppt_generator.py` (PPT creation + slide builders)
+  - `templates.py` (template definitions: `PPTTemplate`, `TEMPLATES`)
+  - `scrape_enrich.py` (scraping/enrichment for PPT fields)
+- Keep shared cross-cutting helpers (not PPT-specific) under `backend/app/utils/` (example: `image_utils.py`).
+- When adding new PPT sections/slides, extend `PropertyPPTGenerator` with `_create_<section>_slide()` helpers and wire them from `generate()`, matching the existing conditional patterns (`scraped_features`, `scraped_amenities`, `images`, `latitude/longitude`).

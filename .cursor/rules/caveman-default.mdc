@@ -1,0 +1,17 @@
+---
+description: Prefer Caveman-lite for code changes
+alwaysApply: true
+---
+
+# Caveman Default
+
+When implementing code changes or answering “how to implement” with code, keep the response short:
+
+- Start the response intent with: `/caveman lite`
+- Then output only:
+  - what to change (file paths + brief bullet)
+  - any new command to run (if needed)
+  - acceptance criteria / what to verify
+
+Do not add long explanations or repeated background.
+

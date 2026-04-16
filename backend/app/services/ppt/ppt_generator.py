@@ -19,6 +19,7 @@ from PIL import Image
 import httpx
 
 from app.services.ppt.templates import TEMPLATES, PPTTemplate
+from app.schemas.ppt.ppt_generator_input import PropertyPPTInput
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,11 @@ class PropertyPPTGenerator:
         Returns:
             BytesIO object containing the PPTX file
         """
+        # Validate the incoming "property_data" contract to prevent silent
+        # shape drift between routes/scrapers and the PPT renderer.
+        validated = PropertyPPTInput.model_validate(property_data)
+        property_data = validated.model_dump(exclude_none=True)
+
         start_time = time.time()
 
         # Create new presentation (16:9 widescreen)

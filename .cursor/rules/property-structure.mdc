@@ -1,0 +1,18 @@
+---
+description: Enforce property module structure
+alwaysApply: true
+---
+
+# Property Module Structure
+
+- API routes: `backend/app/api/routes/property/`
+  - route file: `properties.py` (expects `router = APIRouter(...)`)
+  - router is wired from `backend/app/main.py` via `from app.api.routes.property import properties`
+- Models: `backend/app/models/property/`
+  - SQLAlchemy model(s) go here (e.g. `property.py`)
+- Schemas: `backend/app/schemas/property/`
+  - Pydantic schemas go here
+- Services: `backend/app/services/property/`
+  - create only when you add non-trivial business logic beyond route + DB calls
+- Shared helpers: `backend/app/utils/` (only cross-cutting)
+

@@ -1,0 +1,22 @@
+---
+description: Enforce frontend module folder conventions
+alwaysApply: true
+---
+
+# Frontend Module Structure (Next.js App Router)
+
+For any new feature/module `<module>`:
+
+- UI components: `frontend/components/<module>/`
+- Hooks: `frontend/hooks/use-<module>.ts` (or `frontend/hooks/<module>/...`)
+- Types: `frontend/types/<module>/...` OR `frontend/types/api/...` for API shapes
+- API client code: `frontend/lib/api/<module>.ts` (or the closest existing `lib/api/*` file)
+- Next routes/pages: `frontend/app/<route>/page.tsx` (route groups under `frontend/app/(...)/`)
+
+# PPT Frontend (avoid duplicate entrypoints)
+
+- Keep PPT UI in `frontend/components/properties/ppt-generation/`.
+- Before creating another `generate-ppt-button.tsx` anywhere else, check existing imports:
+  - `frontend/components/properties/property-detail-content.tsx`
+  - `frontend/components/properties/index.ts`
+
