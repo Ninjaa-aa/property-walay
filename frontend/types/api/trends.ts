@@ -224,3 +224,4 @@ export interface TrendsSearchParams {
 
 export type TrendsCategory = "buying" | "renting";
 
+

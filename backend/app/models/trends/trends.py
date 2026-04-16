@@ -181,3 +181,4 @@ class TrendsMetadata(Base):
     value = Column(Text, nullable=True)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+

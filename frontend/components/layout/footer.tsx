@@ -1,20 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Home, Mail } from "lucide-react";
 import { footerLinks } from "@/data/layout/footer-links";
 import { socialLinks } from "@/data/layout/social-links";
 
 export function Footer() {
-  // Initialize with current year (will be updated client-side if needed)
-  const [currentYear] = useState(() => {
-    if (typeof window !== "undefined") {
-      return new Date().getFullYear();
-    }
-    // Fallback for SSR - use a static year
-    return 2025;
-  });
+  // Render a stable value during hydration to avoid SSR/client mismatches.
+  // Then update to the real year after mount.
+  const [currentYear, setCurrentYear] = useState<string>("");
+
+  useEffect(() => {
+    setCurrentYear(String(new Date().getFullYear()));
+  }, []);
 
   return (
     <footer className="bg-background border-t">

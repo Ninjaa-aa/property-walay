@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { usePptExport } from "@/hooks/use-ppt-export";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import {
-  FilePresentation,
+  Presentation,
   Download,
   Loader2,
   CheckCircle2,
@@ -83,7 +83,7 @@ export function GeneratePptButton({
       case "failed":
         return <XCircle className="text-destructive h-12 w-12" />;
       default:
-        return <FilePresentation className="text-muted-foreground h-12 w-12" />;
+        return <Presentation className="text-muted-foreground h-12 w-12" />;
     }
   };
 
@@ -114,7 +114,7 @@ export function GeneratePptButton({
         {isGenerating ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <FilePresentation className="h-4 w-4" />
+          <Presentation className="h-4 w-4" />
         )}
         {size !== "icon" && (isGenerating ? "Generating..." : "Generate PPT")}
       </Button>
@@ -123,7 +123,7 @@ export function GeneratePptButton({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FilePresentation className="h-5 w-5" />
+              <Presentation className="h-5 w-5" />
               Generate Presentation
             </DialogTitle>
             <DialogDescription>
@@ -208,6 +208,7 @@ export function GeneratePptButton({
     </>
   );
 }
+
 
 
 
