@@ -20,6 +20,7 @@ import { FadeIn } from "@/components/animations";
 import { ApiClientError } from "@/lib/api/client";
 import type { ApiProperty } from "@/types/api/property";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
+import { useScheduleMeeting } from "@/hooks/use-schedule-meeting";
 
 interface PropertyDetailContentProps {
   propertyId: string;
@@ -35,6 +36,7 @@ export function PropertyDetailContent({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const recordPropertyView = useSearchHistoryStore((s) => s.recordPropertyView);
+  const { requestMeeting, loading: scheduling } = useScheduleMeeting();
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -78,7 +80,7 @@ export function PropertyDetailContent({
   };
 
   const handleScheduleMeeting = () => {
-    console.log("Schedule meeting for property:", propertyId);
+    void requestMeeting(propertyId);
   };
 
   const handleSendMessage = () => {
@@ -291,6 +293,7 @@ export function PropertyDetailContent({
               phoneNumber={property.poc_number}
               onScheduleMeeting={handleScheduleMeeting}
               onSendMessage={handleSendMessage}
+              scheduling={scheduling}
             />
           </FadeIn>
 

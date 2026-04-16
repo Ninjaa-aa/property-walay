@@ -7,13 +7,14 @@ import {
   getTelLink,
   getWhatsAppLink,
 } from "@/lib/utils/format-phone";
-import { Phone, MessageCircle, Calendar, User } from "lucide-react";
+import { Phone, MessageCircle, Calendar, Loader2, User } from "lucide-react";
 
 interface ContactAgentCardProps {
   agentName?: string | null;
   phoneNumber?: string | null;
   onScheduleMeeting?: () => void;
   onSendMessage?: () => void;
+  scheduling?: boolean;
 }
 
 export function ContactAgentCard({
@@ -21,6 +22,7 @@ export function ContactAgentCard({
   phoneNumber,
   onScheduleMeeting,
   onSendMessage,
+  scheduling = false,
 }: ContactAgentCardProps) {
   const telLink = getTelLink(phoneNumber);
   const whatsappLink = getWhatsAppLink(phoneNumber);
@@ -69,8 +71,12 @@ export function ContactAgentCard({
 
         {/* Action Buttons */}
         <div className="space-y-2 pt-2">
-          <Button className="w-full" onClick={onScheduleMeeting}>
-            <Calendar className="mr-2 h-4 w-4" />
+          <Button className="w-full" onClick={onScheduleMeeting} disabled={scheduling}>
+            {scheduling ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Calendar className="mr-2 h-4 w-4" />
+            )}
             Schedule Meeting
           </Button>
           <Button variant="outline" className="w-full" onClick={onSendMessage}>

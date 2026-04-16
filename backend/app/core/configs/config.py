@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     
     # Chatbot Configuration
     CHATBOT_WEBHOOK_URL: str = ""
+
+    # Meeting Configuration
+    MEETING_WEBHOOK_URL: str = ""
     
     # Cache Configuration
     CACHE_TTL_SECONDS: int = 300  # 5 minutes default cache TTL

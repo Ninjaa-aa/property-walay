@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { getUserDisplayInfo } from "@/lib/utils/dashboard";
+import { useAvatarUrl } from "@/hooks/use-avatar-url";
 
 interface TopNavProps {
   className?: string;
@@ -51,6 +52,7 @@ export function TopNav({ className }: TopNavProps) {
 
   const pageTitle = pageTitles[pathname] || "Dashboard";
   const { userInitials, userName } = getUserDisplayInfo(user, profile);
+  const avatarUrl = useAvatarUrl(profile?.avatar);
 
   if (loading) {
     return null;
@@ -98,9 +100,7 @@ export function TopNav({ className }: TopNavProps) {
                 className="relative h-9 w-auto gap-2 px-2"
               >
                 <Avatar className="h-8 w-8">
-                  {profile?.avatar && (
-                    <AvatarImage src={profile.avatar} alt={userName} />
-                  )}
+                  {avatarUrl && <AvatarImage src={avatarUrl} alt={userName} />}
                   <AvatarFallback className="bg-primary/10 text-primary text-xs">
                     {userInitials}
                   </AvatarFallback>

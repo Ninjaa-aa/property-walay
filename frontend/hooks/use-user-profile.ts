@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { SupabaseUser, UserProfile } from "@/types/user";
 
@@ -6,6 +6,7 @@ interface UseUserProfileReturn {
   user: SupabaseUser | null;
   profile: UserProfile | null;
   loading: boolean;
+  refresh: () => Promise<void>;
 }
 
 export function useUserProfile(): UseUserProfileReturn {
@@ -17,8 +18,27 @@ export function useUserProfile(): UseUserProfileReturn {
 
   const supabase = useMemo(() => createClient(), []);
 
+  const refresh = useCallback(async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user) {
+      setUser(null);
+      setProfile(null);
+      return;
+    }
+    setUser(session.user);
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", session.user.id)
+      .single();
+    if (!error && data) {
+      setProfile(data);
+    }
+  }, [supabase]);
+
   useEffect(() => {
-    // Prevent multiple initializations
     if (initializedRef.current) return;
     initializedRef.current = true;
 
@@ -26,7 +46,6 @@ export function useUserProfile(): UseUserProfileReturn {
     let timeoutId: NodeJS.Timeout | null = null;
     let loadingComplete = false;
 
-    // Set a timeout to prevent infinite loading (10 seconds max)
     timeoutId = setTimeout(() => {
       if (mounted && !loadingComplete) {
         console.warn("User profile loading timeout - setting loading to false");
@@ -37,7 +56,6 @@ export function useUserProfile(): UseUserProfileReturn {
 
     const fetchUserAndProfile = async () => {
       try {
-        // Use getSession() instead of getUser() - more reliable for client-side
         const {
           data: { session },
           error: sessionError,
@@ -57,7 +75,6 @@ export function useUserProfile(): UseUserProfileReturn {
         const currentUser = session.user;
         setUser(currentUser);
 
-        // Fetch profile from profiles table
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
@@ -69,7 +86,6 @@ export function useUserProfile(): UseUserProfileReturn {
         if (!profileError && profileData) {
           setProfile(profileData);
         } else {
-          // Profile doesn't exist or error occurred
           setProfile(null);
         }
 
@@ -77,8 +93,6 @@ export function useUserProfile(): UseUserProfileReturn {
         loadingComplete = true;
         if (timeoutId) clearTimeout(timeoutId);
 
-        // Now set up auth state change listener AFTER initial load
-        // This prevents race conditions
         if (!subscriptionRef.current) {
           const {
             data: { subscription },
@@ -89,7 +103,6 @@ export function useUserProfile(): UseUserProfileReturn {
             setUser(newUser);
 
             if (newUser) {
-              // Fetch profile when auth state changes
               try {
                 const { data: profileData, error } = await supabase
                   .from("profiles")
@@ -136,5 +149,5 @@ export function useUserProfile(): UseUserProfileReturn {
     };
   }, [supabase]);
 
-  return { user, profile, loading };
+  return { user, profile, loading, refresh };
 }

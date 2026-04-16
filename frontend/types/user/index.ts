@@ -17,6 +17,8 @@ export interface UserProfile {
   email: string;
   role: string;
   avatar: string | null;
+  phone: string | null;
+  calendly_link: string | null;
   created_at: string;
   updated_at: string;
 }

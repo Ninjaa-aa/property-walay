@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { dashboardNavigationItems } from "@/data/dashboard/navigation";
 import { getUserDisplayInfo } from "@/lib/utils/dashboard";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -36,6 +37,7 @@ export function Sidebar({ className }: SidebarProps) {
     user,
     profile
   );
+  const avatarUrl = useAvatarUrl(profile?.avatar);
 
   if (loading) {
     return null;
@@ -78,9 +80,7 @@ export function Sidebar({ className }: SidebarProps) {
           <div className="flex h-20 items-center border-b px-5">
             <div className="flex w-full items-center gap-3">
               <Avatar className="h-12 w-12">
-                {profile?.avatar && (
-                  <AvatarImage src={profile.avatar} alt={userName} />
-                )}
+                {avatarUrl && <AvatarImage src={avatarUrl} alt={userName} />}
                 <AvatarFallback className="bg-primary/10 text-primary">
                   {userInitials}
                 </AvatarFallback>

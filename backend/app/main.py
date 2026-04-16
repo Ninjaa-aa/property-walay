@@ -11,6 +11,7 @@ from app.api.routes.property import properties
 from app.api.routes.ppt import ppt_exports
 from app.api.routes.trends import trends
 from app.api.routes.chatbot import chatbot
+from app.api.routes.meeting import meeting
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -120,6 +121,7 @@ app.include_router(properties.router, prefix=settings.API_V1_STR)
 app.include_router(ppt_exports.router, prefix=settings.API_V1_STR)
 app.include_router(trends.router, prefix=settings.API_V1_STR)
 app.include_router(chatbot.router, prefix=settings.API_V1_STR)
+app.include_router(meeting.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")
