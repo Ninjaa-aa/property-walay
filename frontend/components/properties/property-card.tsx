@@ -43,6 +43,11 @@ const propertyTypeColors: Record<string, string> = {
   commercial: "bg-purple-500",
 };
 
+const listingTypeColors: Record<string, string> = {
+  sale: "bg-emerald-600",
+  rent: "bg-sky-600",
+};
+
 export function PropertyCard({
   property,
   onSave,
@@ -96,6 +101,15 @@ export function PropertyCard({
               >
                 {property.prop_type.charAt(0).toUpperCase() +
                   property.prop_type.slice(1)}
+              </Badge>
+            )}
+
+            {property.listing_type && (
+              <Badge
+                className={`absolute top-12 left-2 ${listingTypeColors[property.listing_type] || "bg-gray-500"} text-white`}
+              >
+                {property.listing_type.charAt(0).toUpperCase() +
+                  property.listing_type.slice(1)}
               </Badge>
             )}
 

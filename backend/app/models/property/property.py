@@ -9,11 +9,16 @@ class Property(Base):
     __tablename__ = "properties"
     __table_args__ = (
         CheckConstraint(
+            "listing_type IS NULL OR listing_type = ANY(ARRAY['rent'::text, 'sale'::text])",
+            name="properties_listing_type_check"
+        ),
+        CheckConstraint(
             "source = ANY(ARRAY['graana'::text, 'lamudi'::text, 'zameen'::text])",
             name="properties_source_check"
         ),
         Index("ux_properties_source_sourceid", "source", "source_id", unique=True),
         Index("idx_properties_updated_at", "updated_at", postgresql_ops={"updated_at": "DESC"}),
+        Index("idx_properties_listing_type", "listing_type"),
         {"schema": "public"}
     )
 
@@ -42,6 +47,7 @@ class Property(Base):
     longitude = Column(Numeric, nullable=True)
     current_price = Column(Numeric, nullable=True)
     currency = Column(Text, nullable=True)
+    listing_type = Column(Text, nullable=True)
     created_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),

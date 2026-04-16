@@ -24,6 +24,9 @@ export function parseSearchParams(
   const prop_type = searchParams.get("prop_type");
   if (prop_type) params.prop_type = prop_type;
 
+  const listing_type = searchParams.get("listing_type");
+  if (listing_type) params.listing_type = listing_type as "rent" | "sale";
+
   const source = searchParams.get("source");
   if (source) params.source = source as "graana" | "lamudi" | "zameen";
 
@@ -59,6 +62,9 @@ export function filtersToSearchParams(filters: PropertyListParams): string {
   }
   if (filters.prop_type) {
     params.set("prop_type", filters.prop_type);
+  }
+  if (filters.listing_type) {
+    params.set("listing_type", filters.listing_type);
   }
   if (filters.source) {
     params.set("source", filters.source);

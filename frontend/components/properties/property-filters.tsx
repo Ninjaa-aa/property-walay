@@ -14,6 +14,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { X, Search, Filter } from "lucide-react";
 import type { PropertyListParams } from "@/types/api/property";
+import {
+  bathOptions,
+  bedOptions,
+  listingTypeOptions,
+  propertyTypeOptions,
+  sourceOptions,
+} from "@/data/properties/filters";
 
 interface PropertyFiltersProps {
   filters: PropertyListParams;
@@ -111,9 +118,34 @@ export function PropertyFilters({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="commercial">Commercial</SelectItem>
-              <SelectItem value="residential">Homes / Residential</SelectItem>
-              <SelectItem value="plots">Plots</SelectItem>
+              {propertyTypeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Listing Type */}
+          <Select
+            value={localFilters.listing_type || "all"}
+            onValueChange={(value) =>
+              handleFilterChange(
+                "listing_type",
+                value === "all" ? undefined : value
+              )
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Listing Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Listings</SelectItem>
+              {listingTypeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -132,11 +164,11 @@ export function PropertyFilters({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Any Beds</SelectItem>
-              <SelectItem value="1">1 Bed</SelectItem>
-              <SelectItem value="2">2 Beds</SelectItem>
-              <SelectItem value="3">3 Beds</SelectItem>
-              <SelectItem value="4">4 Beds</SelectItem>
-              <SelectItem value="5">5+ Beds</SelectItem>
+              {bedOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -155,10 +187,11 @@ export function PropertyFilters({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Any Baths</SelectItem>
-              <SelectItem value="1">1 Bath</SelectItem>
-              <SelectItem value="2">2 Baths</SelectItem>
-              <SelectItem value="3">3 Baths</SelectItem>
-              <SelectItem value="4">4+ Baths</SelectItem>
+              {bathOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -179,9 +212,11 @@ export function PropertyFilters({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sources</SelectItem>
-              <SelectItem value="zameen">Zameen</SelectItem>
-              <SelectItem value="graana">Graana</SelectItem>
-              <SelectItem value="lamudi">Lamudi</SelectItem>
+              {sourceOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 

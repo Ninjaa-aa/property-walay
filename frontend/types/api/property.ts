@@ -24,6 +24,7 @@ export interface ApiProperty {
   longitude: number | null;
   current_price: number | null;
   currency: string | null;
+  listing_type: "rent" | "sale" | null;
   created_at: string;
   updated_at: string;
   last_price_change_at: string | null;
@@ -33,6 +34,7 @@ export interface PropertyListParams {
   source?: "graana" | "lamudi" | "zameen";
   prop_type?: string;
   prop_subtype?: string;
+  listing_type?: "rent" | "sale";
   min_price?: number;
   max_price?: number;
   currency?: string;

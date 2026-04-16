@@ -39,6 +39,7 @@ export async function loadMoreProperties({
   if (filters.min_area != null) params.min_area_size = filters.min_area;
   if (filters.max_area != null) params.max_area_size = filters.max_area;
   if (filters.prop_type) params.prop_type = filters.prop_type;
+  if (filters.listing_type) params.listing_type = filters.listing_type;
 
   return apiGet<PropertyListResponse>("/properties", params);
 }

@@ -25,6 +25,7 @@ class PropertyBase(BaseModel):
     longitude: Optional[float] = None
     current_price: Optional[float] = None
     currency: Optional[str] = None
+    listing_type: Optional[str] = None
 
 
 class PropertyCreate(PropertyBase):
@@ -52,6 +53,7 @@ class PropertyUpdate(BaseModel):
     longitude: Optional[float] = None
     current_price: Optional[float] = None
     currency: Optional[str] = None
+    listing_type: Optional[str] = None
 
 
 class PropertyResponse(PropertyBase):
@@ -78,6 +80,7 @@ class PropertyFilterParams(BaseModel):
     source: Optional[str] = None
     prop_type: Optional[str] = None
     prop_subtype: Optional[str] = None
+    listing_type: Optional[str] = None
     min_price: Optional[float] = None
     max_price: Optional[float] = None
     currency: Optional[str] = None

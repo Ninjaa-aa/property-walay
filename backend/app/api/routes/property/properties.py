@@ -28,6 +28,7 @@ def list_properties(
     source: Optional[str] = Query(None, description="Filter by source: graana, lamudi, zameen"),
     prop_type: Optional[str] = Query(None, description="Filter by property type"),
     prop_subtype: Optional[str] = Query(None, description="Filter by property subtype"),
+    listing_type: Optional[str] = Query(None, description="Filter by listing type: rent or sale"),
     min_price: Optional[float] = Query(None, ge=0),
     max_price: Optional[float] = Query(None, ge=0),
     currency: Optional[str] = Query(None),
@@ -51,6 +52,7 @@ def list_properties(
         source=source,
         prop_type=prop_type,
         prop_subtype=prop_subtype,
+        listing_type=listing_type,
         min_price=min_price,
         max_price=max_price,
         currency=currency,
@@ -87,6 +89,8 @@ def list_properties(
         query = query.filter(func.lower(Property.prop_type).in_(match_values))
     if prop_subtype:
         query = query.filter(Property.prop_subtype == prop_subtype)
+    if listing_type:
+        query = query.filter(func.lower(Property.listing_type) == listing_type.strip().lower())
     if min_price is not None:
         query = query.filter(Property.current_price >= min_price)
     if max_price is not None:
