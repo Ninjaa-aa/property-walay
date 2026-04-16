@@ -9,10 +9,11 @@ import { PropertySkeleton } from "./property-skeleton";
 import { useProperties } from "@/hooks/use-properties";
 import { FadeIn } from "@/components/animations";
 import { Card, CardContent } from "@/components/ui/card";
-import { SearchX } from "lucide-react";
+import { History, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSearchUrl } from "@/lib/utils/search-params";
 import type { PropertyListParams } from "@/types/api/property";
+import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 
 interface SearchPageContentProps {
   initialFilters: PropertyListParams;
@@ -21,17 +22,19 @@ interface SearchPageContentProps {
 export function SearchPageContent({ initialFilters }: SearchPageContentProps) {
   const router = useRouter();
   const [filters, setFilters] = useState<PropertyListParams>(initialFilters);
+  const recordSearch = useSearchHistoryStore((s) => s.recordSearch);
 
   const { properties, loading, error, total, page, pageSize, totalPages } =
     useProperties(filters);
 
   const handleFiltersChange = useCallback(
     (newFilters: PropertyListParams) => {
+      recordSearch(newFilters);
       setFilters(newFilters);
       const url = getSearchUrl(newFilters);
       router.replace(url, { scroll: false });
     },
-    [router]
+    [recordSearch, router]
   );
 
   const handlePageChange = useCallback(
@@ -55,29 +58,33 @@ export function SearchPageContent({ initialFilters }: SearchPageContentProps) {
   );
 
   const handleSave = (propertyId: string) => {
-    // TODO: Implement save functionality
     console.log("Save property:", propertyId);
   };
 
   const handleClearFilters = useCallback(() => {
     const clearedFilters: PropertyListParams = { page: 1, page_size: 20 };
+    recordSearch(clearedFilters);
     setFilters(clearedFilters);
     router.replace("/dashboard/search", { scroll: false });
-  }, [router]);
+  }, [recordSearch, router]);
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
       <FadeIn delay={0.1}>
-        <div>
-          <h1 className="text-3xl font-bold lg:text-4xl">Search Properties</h1>
-          <p className="text-muted-foreground mt-2">
-            Find your dream property in Pakistan
-          </p>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold lg:text-4xl">Search Properties</h1>
+            <p className="text-muted-foreground mt-2">
+              Find your dream property in Pakistan
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => router.push("/dashboard/history")}>
+            <History className="h-4 w-4" />
+            View history
+          </Button>
         </div>
       </FadeIn>
 
-      {/* Filters */}
       <FadeIn delay={0.2}>
         <PropertyFilters
           key={JSON.stringify(filters)}
@@ -87,7 +94,6 @@ export function SearchPageContent({ initialFilters }: SearchPageContentProps) {
         />
       </FadeIn>
 
-      {/* Results */}
       {loading ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -122,7 +128,6 @@ export function SearchPageContent({ initialFilters }: SearchPageContentProps) {
         </Card>
       ) : (
         <>
-          {/* Property Grid */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {properties.map((property, index) => (
               <FadeIn key={property.our_id} delay={0.1 + index * 0.05}>
@@ -131,7 +136,6 @@ export function SearchPageContent({ initialFilters }: SearchPageContentProps) {
             ))}
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <FadeIn delay={0.5}>
               <PropertyPagination

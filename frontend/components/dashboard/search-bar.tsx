@@ -4,6 +4,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 
 interface SearchBarProps {
   className?: string;
@@ -12,10 +13,12 @@ interface SearchBarProps {
 export function SearchBar({ className }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
+  const recordSearch = useSearchHistoryStore((s) => s.recordSearch);
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      recordSearch({ area_name: searchQuery.trim() });
       router.push(`/dashboard/search?q=${encodeURIComponent(searchQuery)}`);
     }
   };

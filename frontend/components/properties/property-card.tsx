@@ -12,8 +12,8 @@ import { getPropertyImage } from "@/lib/utils/property";
 import { Bed, Bath, MapPin, Heart } from "lucide-react";
 import type { ApiProperty } from "@/types/api/property";
 import { useState } from "react";
+import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 
-// Check if image URL should bypass Next.js optimization
 function shouldUnoptimizeImage(url: string): boolean {
   if (!url || typeof url !== "string") return false;
   return (
@@ -56,6 +56,7 @@ export function PropertyCard({
   const [saved, setSaved] = useState(isSaved);
   const [imageError, setImageError] = useState(false);
   const imageUrl = getPropertyImage(property);
+  const recordPropertyView = useSearchHistoryStore((s) => s.recordPropertyView);
 
   const handleSave = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -64,9 +65,19 @@ export function PropertyCard({
     onSave?.(property.our_id);
   };
 
+  const handleClick = () => {
+    recordPropertyView({
+      propertyId: property.our_id,
+      title: property.title || "Untitled Property",
+      areaName: property.area_name || null,
+      price: property.current_price || null,
+      viewedAt: new Date().toISOString(),
+    });
+  };
+
   return (
     <AnimatedCard hoverEffect>
-      <Link href={`/dashboard/search/${property.our_id}`}>
+      <Link href={`/dashboard/search/${property.our_id}`} onClick={handleClick}>
         <div className="group bg-card overflow-hidden rounded-lg border transition-all hover:shadow-lg">
           {/* Image Section */}
           <div className="bg-muted relative aspect-video w-full overflow-hidden">
@@ -86,7 +97,6 @@ export function PropertyCard({
               </div>
             )}
 
-            {/* Source Badge */}
             <Badge
               className={`absolute top-2 right-2 ${sourceColors[property.source] || "bg-gray-500"} text-white`}
             >
@@ -94,7 +104,6 @@ export function PropertyCard({
                 property.source.slice(1)}
             </Badge>
 
-            {/* Property Type Badge */}
             {property.prop_type && (
               <Badge
                 className={`absolute top-2 left-2 ${propertyTypeColors[property.prop_type] || "bg-gray-500"} text-white`}
@@ -113,7 +122,6 @@ export function PropertyCard({
               </Badge>
             )}
 
-            {/* Save Button */}
             <button
               onClick={handleSave}
               className="bg-background/80 hover:bg-background absolute right-2 bottom-2 rounded-full p-2 backdrop-blur-sm transition-colors"
@@ -127,12 +135,10 @@ export function PropertyCard({
 
           {/* Content Section */}
           <div className="p-4">
-            {/* Title */}
             <h3 className="line-clamp-2 text-lg leading-tight font-semibold">
               {property.title || "Untitled Property"}
             </h3>
 
-            {/* Location */}
             <div className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
               <MapPin className="h-4 w-4" />
               <span className="line-clamp-1">
@@ -140,7 +146,6 @@ export function PropertyCard({
               </span>
             </div>
 
-            {/* Price */}
             <p className="text-primary mt-2 text-2xl font-bold">
               {formatPriceShort(
                 property.current_price || 0,
@@ -148,7 +153,6 @@ export function PropertyCard({
               )}
             </p>
 
-            {/* Property Details */}
             <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-4 text-sm">
               {property.beds !== null && property.beds !== undefined && (
                 <span className="flex items-center gap-1">
@@ -169,12 +173,10 @@ export function PropertyCard({
               )}
             </div>
 
-            {/* Updated Time */}
             <p className="text-muted-foreground mt-2 text-xs">
               Updated {formatRelativeTime(property.updated_at)}
             </p>
 
-            {/* View Details Button */}
             <Button className="mt-4 w-full" variant="default">
               View Details
             </Button>

@@ -19,6 +19,7 @@ import { MapPin, Share2 } from "lucide-react";
 import { FadeIn } from "@/components/animations";
 import { ApiClientError } from "@/lib/api/client";
 import type { ApiProperty } from "@/types/api/property";
+import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 
 interface PropertyDetailContentProps {
   propertyId: string;
@@ -33,6 +34,7 @@ export function PropertyDetailContent({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const recordPropertyView = useSearchHistoryStore((s) => s.recordPropertyView);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -47,6 +49,14 @@ export function PropertyDetailContent({
 
         setProperty(propertyData);
         setSimilarProperties(similarData);
+
+        recordPropertyView({
+          propertyId: propertyData.our_id,
+          title: propertyData.title || "Untitled Property",
+          areaName: propertyData.area_name || null,
+          price: propertyData.current_price || null,
+          viewedAt: new Date().toISOString(),
+        });
       } catch (err) {
         if (err instanceof ApiClientError) {
           setError(err.detail);
@@ -61,20 +71,17 @@ export function PropertyDetailContent({
     if (propertyId) {
       fetchProperty();
     }
-  }, [propertyId]);
+  }, [propertyId, recordPropertyView]);
 
   const handleSave = () => {
     setSaved(!saved);
-    // TODO: Implement save to database
   };
 
   const handleScheduleMeeting = () => {
-    // TODO: Implement meeting scheduling
     console.log("Schedule meeting for property:", propertyId);
   };
 
   const handleSendMessage = () => {
-    // TODO: Implement message sending
     console.log("Send message for property:", propertyId);
   };
 
@@ -107,7 +114,6 @@ export function PropertyDetailContent({
 
   return (
     <div className="space-y-6">
-      {/* Back Button */}
       <FadeIn delay={0.1}>
         <Button variant="ghost" onClick={() => router.back()}>
           ← Back
@@ -115,14 +121,11 @@ export function PropertyDetailContent({
       </FadeIn>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left Column - Main Content */}
         <div className="space-y-6 lg:col-span-2">
-          {/* Image Gallery */}
           <FadeIn delay={0.2}>
             <PropertyImageGallery property={property} />
           </FadeIn>
 
-          {/* Header */}
           <FadeIn delay={0.3}>
             <PropertyDetailHeader
               property={property}
@@ -131,7 +134,6 @@ export function PropertyDetailContent({
             />
           </FadeIn>
 
-          {/* Description */}
           <FadeIn delay={0.4}>
             <Card>
               <CardHeader>
@@ -145,7 +147,6 @@ export function PropertyDetailContent({
             </Card>
           </FadeIn>
 
-          {/* Location */}
           <FadeIn delay={0.5}>
             <Card>
               <CardHeader>
@@ -179,7 +180,6 @@ export function PropertyDetailContent({
             </Card>
           </FadeIn>
 
-          {/* Additional Information */}
           <FadeIn delay={0.6}>
             <Card>
               <CardHeader>
@@ -254,7 +254,6 @@ export function PropertyDetailContent({
             </Card>
           </FadeIn>
 
-          {/* Actions Card - PPT Generation */}
           <FadeIn delay={0.7}>
             <Card>
               <CardHeader>
@@ -285,9 +284,7 @@ export function PropertyDetailContent({
           </FadeIn>
         </div>
 
-        {/* Right Column - Sidebar */}
         <div className="space-y-6">
-          {/* Contact Agent */}
           <FadeIn delay={0.3}>
             <ContactAgentCard
               agentName={property.poc_name}
@@ -297,7 +294,6 @@ export function PropertyDetailContent({
             />
           </FadeIn>
 
-          {/* Similar Properties */}
           {similarProperties.length > 0 && (
             <FadeIn delay={0.4}>
               <SimilarProperties
