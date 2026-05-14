@@ -9,7 +9,8 @@
     "lint": "eslint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "upload:videos": "node scripts/upload-videos-to-supabase.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
