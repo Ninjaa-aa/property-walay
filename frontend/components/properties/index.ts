@@ -9,3 +9,4 @@ export { SimilarProperties } from "./similar-properties";
 export { SearchPageContent } from "./search-page-content";
 export { PropertyDetailContent } from "./property-detail-content";
 export { GeneratePptButton } from "./ppt-generation/generate-ppt-button";
+export { GenerateVideoButton } from "./video-generation/generate-video-button";
