@@ -29,12 +29,14 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # Redis Configuration
-    REDIS_HOST: str 
+    # Redis Configuration (maps to StackExchange.Redis: EndPoints, User, Password)
+    REDIS_HOST: str
     REDIS_PORT: int
-    REDIS_USERNAME: str
-    REDIS_PASSWORD: str 
-    REDIS_DECODE_RESPONSES: bool 
+    REDIS_USERNAME: str = "default"
+    REDIS_PASSWORD: str
+    REDIS_DECODE_RESPONSES: bool = True
+    # Redis Cloud / TLS endpoints usually need True; local redis:// often False
+    REDIS_SSL: bool = False
     
     # Chatbot Configuration
     CHATBOT_WEBHOOK_URL: str = ""

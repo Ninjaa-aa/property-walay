@@ -44,7 +44,31 @@ BACKEND_CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 SECRET_KEY=your-secret-key-change-in-production
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Redis (optional caching — matches Redis Cloud / StackExchange.Redis style)
+# C#: EndPoints={{host, port}}, User=default, Password=...  →  same values here:
+REDIS_HOST=redis-xxxxx.cXXX.us-east-X-X.ec2.cloud.redislabs.com
+REDIS_PORT=18571
+REDIS_USERNAME=default
+REDIS_PASSWORD=your_redis_cloud_password
+REDIS_DECODE_RESPONSES=True
+REDIS_SSL=true
+CACHE_TTL_SECONDS=300
 ```
+
+### 2b. Redis Cloud (StackExchange.Redis equivalent)
+
+If you use **Redis Cloud**, map your C# `ConfigurationOptions` to `.env` like this:
+
+| C# / Redis Cloud | Backend `.env` |
+|------------------|----------------|
+| `EndPoints` host | `REDIS_HOST` |
+| `EndPoints` port | `REDIS_PORT` |
+| `User` (often `default`) | `REDIS_USERNAME` |
+| `Password` | `REDIS_PASSWORD` |
+| TLS (typical for `*.cloud.redislabs.com`) | `REDIS_SSL=true` |
+
+Local Redis without TLS: set `REDIS_SSL=false` and `REDIS_HOST=127.0.0.1`, `REDIS_PORT=6379`.
 
 ### 3. Get Supabase Credentials
 

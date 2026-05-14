@@ -14,6 +14,7 @@ def _create_client() -> redis.Redis:
         port=settings.REDIS_PORT,
         username=settings.REDIS_USERNAME or None,
         password=settings.REDIS_PASSWORD or None,
+        ssl=settings.REDIS_SSL,
         decode_responses=settings.REDIS_DECODE_RESPONSES,
     )
 
