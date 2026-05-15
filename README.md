@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./docs/assets/logo.png" alt="PropertyWalay" width="320"/>
+  <img src="./docs/assets/logo.svg" alt="PropertyWalay" width="320"/>
 </p>
 
 <p align="center">
@@ -50,7 +50,7 @@
 High-level system layout (four tiers):
 
 <p align="center">
-  <img src="./docs/assets/architecture.png" alt="PropertyWalay four-tier architecture" width="720"/>
+  <img src="./docs/assets/architecture.svg" alt="PropertyWalay four-tier architecture" width="720"/>
 </p>
 
 <!-- SVG source (GitHub also supports): docs/assets/architecture.svg -->
@@ -70,7 +70,7 @@ flowchart LR
 ### Data ingestion pipeline
 
 <p align="center">
-  <img src="./docs/assets/data-pipeline.png" alt="Scraper to UI data pipeline" width="640"/>
+  <img src="./docs/assets/data-pipeline.svg" alt="Scraper to UI data pipeline" width="640"/>
 </p>
 
 ```mermaid
