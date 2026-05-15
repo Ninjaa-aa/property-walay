@@ -25,14 +25,17 @@ from scraper_utils import (
     get_property_id
 )
 
-# ENV
-SUPABASE_URL = (
-    "https://jicaojwemqdwzznvmujy.supabase.co"
-)
-SUPABASE_KEY = (
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppY2FvandlbXFkd3p6bnZtdWp5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDQ5NzcwMSwiZXhwIjoyMDc2MDczNzAxfQ.z9-1Hdc-JBkSow-S7rTcp0m2v0qq8cCD6f3l3fiddnU"
-)
 CURRENCY_DEFAULT = "PKR"
+
+_supabase_url: Optional[str] = None
+_supabase_key: Optional[str] = None
+
+
+def configure_supabase(url: str, key: str) -> None:
+    """Set Supabase credentials (pass via CLI, not env vars)."""
+    global _supabase_url, _supabase_key
+    _supabase_url = url.strip()
+    _supabase_key = key.strip()
 
 # Configuration for robust uploads
 BATCH_SIZE = 5000  # Process properties in batches
@@ -49,7 +52,11 @@ OLD_CHUNKS_DIR = "old_chunks"
 
 def create_supabase_client() -> Client:
     """Create a Supabase client."""
-    return create_client(SUPABASE_URL, SUPABASE_KEY)
+    if not _supabase_url or not _supabase_key:
+        raise ValueError(
+            "Supabase credentials required. Pass --supabase-url and --supabase-key."
+        )
+    return create_client(_supabase_url, _supabase_key)
 
 
 def clear_all_tables(supabase: Client) -> None:
@@ -454,8 +461,10 @@ def process_chunk_file(chunk_file: str, old_chunks_base: Optional[str], supabase
     }
 
 
-def ingest_all():
+def ingest_all(supabase_url: str, supabase_key: str):
     """Main ingestion function: clear tables, then process all chunked JSON files."""
+    configure_supabase(supabase_url, supabase_key)
+
     print("=" * 80)
     print("SUPABASE INGESTION - CHUNKED JSON PROCESSING")
     print("=" * 80)
@@ -515,5 +524,11 @@ def ingest_all():
 
 
 if __name__ == "__main__":
-    ingest_all()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Ingest chunked JSON into Supabase")
+    parser.add_argument("--supabase-url", required=True, help="Supabase project URL")
+    parser.add_argument("--supabase-key", required=True, help="Supabase service role key")
+    args = parser.parse_args()
+    ingest_all(args.supabase_url, args.supabase_key)
 
