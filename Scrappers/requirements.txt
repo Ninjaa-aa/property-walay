@@ -1,0 +1,41 @@
+# FYP Scrappers - Python Dependencies
+# This file contains all the required Python packages for the FYP Scrappers project
+
+# Web Scraping Libraries
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+selenium>=4.15.0
+webdriver-manager>=4.0.0
+
+# Data Processing Libraries
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Database Integration
+supabase>=2.22.0
+
+# Environment Management
+python-dotenv>=1.0.0
+
+# Standard Library Extensions (usually included with Python)
+# These are listed for completeness but typically don't need installation:
+# - json (built-in)
+# - csv (built-in)
+# - os (built-in)
+# - sys (built-in)
+# - time (built-in)
+# - re (built-in)
+# - threading (built-in)
+# - hashlib (built-in)
+# - datetime (built-in)
+# - typing (built-in)
+# - argparse (built-in)
+# - math (built-in)
+# - urllib.parse (built-in)
+# - concurrent.futures (built-in)
+
+# Optional: For better performance and additional features
+# Uncomment if needed:
+# lxml>=4.9.0  # Faster XML/HTML parsing for BeautifulSoup
+# openpyxl>=3.1.0  # For Excel file support
+# xlsxwriter>=3.1.0  # For advanced Excel writing
