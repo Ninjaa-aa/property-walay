@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="PropertyWalay" width="320"/>
+  <img src="./docs/assets/logo.png" alt="PropertyWalay" width="320"/>
 </p>
 
 <p align="center">
@@ -50,43 +50,33 @@
 High-level system layout (four tiers):
 
 <p align="center">
-  <img src="docs/assets/architecture.svg" alt="PropertyWalay four-tier architecture" width="720"/>
+  <img src="./docs/assets/architecture.png" alt="PropertyWalay four-tier architecture" width="720"/>
 </p>
 
-### Request flow (user → listing)
+<!-- SVG source (GitHub also supports): docs/assets/architecture.svg -->
+
+### Request flow (user to listing)
 
 ```mermaid
 flowchart LR
-  subgraph Client
-    U[User]
-    FE[Next.js Frontend]
-  end
-  subgraph API
-    BE[FastAPI Backend]
-    R[(Redis Cache)]
-  end
-  subgraph Data
-    DB[(Supabase PostgreSQL)]
-    V[Vector / Embeddings]
-  end
-  U --> FE
-  FE -->|REST /api/v1| BE
-  BE --> R
-  BE --> DB
-  BE --> V
+  U[User] --> FE[Next.js Frontend]
+  FE -->|REST api/v1| BE[FastAPI Backend]
+  BE --> R[(Redis Cache)]
+  BE --> DB[(Supabase PostgreSQL)]
+  BE --> V[Vector Embeddings]
   FE -->|Auth SSR| DB
 ```
 
 ### Data ingestion pipeline
 
 <p align="center">
-  <img src="docs/assets/data-pipeline.svg" alt="Scraper to UI data pipeline" width="640"/>
+  <img src="./docs/assets/data-pipeline.png" alt="Scraper to UI data pipeline" width="640"/>
 </p>
 
 ```mermaid
 flowchart TD
-  A[External portals<br/>Zameen · Graana · Lamudi] --> B[Scrappers/run_all.py]
-  B --> C[Normalize & chunk JSON]
+  A[External portals] --> B[Scrappers run_all.py]
+  B --> C[Normalize and chunk JSON]
   C --> D[ingest_to_supabase.py]
   D --> E[(PostgreSQL)]
   E --> F[FastAPI properties API]
@@ -97,15 +87,11 @@ flowchart TD
 
 ```mermaid
 flowchart TB
-  main[app/main.py]
-  main --> prop[property/]
-  main --> ppt[ppt/]
-  main --> trends[trends/]
-  main --> chat[chatbot/]
-  main --> meet[meeting/]
-  prop --> svc_p[services/property/]
-  ppt --> svc_ppt[services/ppt/]
-  trends --> svc_t[services/trends/]
+  main[app main.py] --> prop[property routes]
+  main --> ppt[ppt routes]
+  main --> trends[trends routes]
+  main --> chat[chatbot routes]
+  main --> meet[meeting routes]
 ```
 
 ---
