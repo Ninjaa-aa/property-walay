@@ -42,6 +42,7 @@
 - **Video generation** — Location-based property videos for remote buyers.
 - **Meetings** — Schedule and track buyer–agent meetings.
 - **Multilingual UX** — English and Roman Urdu–friendly interaction patterns.
+- **Content-based recommender** — Offline training pipeline in `Model Training/` (embeddings from listing features).
 
 ---
 
@@ -83,6 +84,22 @@ flowchart TD
   F --> G[Next.js UI]
 ```
 
+### Model training pipeline
+
+<p align="center">
+  <img src="./docs/assets/model-training.svg" alt="Model training pipeline" width="720"/>
+</p>
+
+```mermaid
+flowchart LR
+  S[Scrappers JSON] --> P[process_data.py]
+  P --> C[processed CSV]
+  C --> T[train_recommenders.py]
+  T --> A[content_recommender.pth]
+```
+
+See [Model Training/README.md](Model%20Training/README.md) for CLI usage. This module uses **no `.env`** — only command-line paths.
+
 ### Module map (backend)
 
 ```mermaid
@@ -104,6 +121,7 @@ flowchart TB
 | **Backend** | FastAPI, SQLAlchemy, Pydantic, Redis, python-pptx |
 | **Database** | PostgreSQL via Supabase (profiles, listings, meetings, embeddings) |
 | **Scrapers** | Python (`Scrappers/`) |
+| **Model training** | scikit-learn, PyTorch (`Model Training/`) |
 | **AI** | RAG / embeddings, OpenAI-compatible flows (chatbot module) |
 
 ---
@@ -163,6 +181,18 @@ python run_all.py
 python ingest_to_supabase.py
 ```
 
+### 5. Model training (optional — recommender embeddings)
+
+```bash
+cd "Model Training"
+pip install -r requirements.txt
+python run_training.py
+```
+
+Artifacts are written to `Model Training/output/artifacts/` (gitignored). No `.env` in this folder — use `--scrapers-dir` if scraper JSON is not in `../Scrappers`.
+
+Details: [Model Training/README.md](Model%20Training/README.md).
+
 ### Environment variables (summary)
 
 | Location | Purpose |
@@ -190,6 +220,7 @@ property-walay/
 │       ├── schemas/          # Pydantic contracts
 │       └── services/         # PPT generation, trends, property logic
 ├── Scrappers/                # Portal scrapers + Supabase ingest
+├── Model Training/           # Recommender training (no .env)
 ├── docs/
 │   ├── assets/               # README diagrams (SVG)
 │   └── FYP1-MidReport-*.md   # Project documentation
