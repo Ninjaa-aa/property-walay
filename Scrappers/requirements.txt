@@ -14,9 +14,6 @@ numpy>=1.24.0
 # Database Integration
 supabase>=2.22.0
 
-# Environment Management
-python-dotenv>=1.0.0
-
 # Standard Library Extensions (usually included with Python)
 # These are listed for completeness but typically don't need installation:
 # - json (built-in)
