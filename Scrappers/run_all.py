@@ -204,7 +204,7 @@ def run_zameen_scrapers():
     return results
 
 
-def run_ingestion():
+def run_ingestion(supabase_url: str, supabase_key: str):
     """Run Supabase ingestion."""
     print("\n" + "=" * 80)
     print("RUNNING SUPABASE INGESTION")
@@ -214,7 +214,7 @@ def run_ingestion():
     
     try:
         from ingest_to_supabase import ingest_all
-        ingest_all()
+        ingest_all(supabase_url, supabase_key)
         
         end_time = time.time()
         duration = end_time - start_time
@@ -292,8 +292,13 @@ Examples:
                        help='Only run Lamudi scrapers')
     parser.add_argument('--zameen-only', action='store_true', 
                        help='Only run Zameen scrapers')
+    parser.add_argument('--supabase-url', help='Supabase project URL (required for ingestion)')
+    parser.add_argument('--supabase-key', help='Supabase service role key (required for ingestion)')
     
     args = parser.parse_args()
+
+    if not args.scrape_only and (not args.supabase_url or not args.supabase_key):
+        parser.error("--supabase-url and --supabase-key are required unless --scrape-only is set")
     
     print("🏠 PROPERTY SCRAPING AND INGESTION SYSTEM")
     print(f"🕐 Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -318,7 +323,7 @@ Examples:
     
     # Run ingestion
     if not args.scrape_only:
-        ingestion_result = run_ingestion()
+        ingestion_result = run_ingestion(args.supabase_url, args.supabase_key)
     
     # Print summary
     print_summary(all_results, ingestion_result)
