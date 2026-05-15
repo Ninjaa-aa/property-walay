@@ -1,49 +1,41 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" role="img" aria-label="PropertyWalay architecture">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420">
   <defs>
     <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L6,3 L0,6 Z" fill="#64748b"/>
     </marker>
-    <style>
-      .box { fill: #f8fafc; stroke: #334155; stroke-width: 1.5; rx: 8; }
-      .tier { fill: #e0f2fe; stroke: #0284c7; stroke-width: 1.5; rx: 10; }
-      .ext { fill: #fef3c7; stroke: #d97706; stroke-width: 1.5; rx: 8; }
-      .title { font: 600 13px Segoe UI, system-ui, sans-serif; fill: #0f172a; }
-      .sub { font: 11px Segoe UI, system-ui, sans-serif; fill: #475569; }
-      .label { font: 600 12px Segoe UI, system-ui, sans-serif; fill: #0369a1; }
-    </style>
   </defs>
-  <text x="360" y="24" text-anchor="middle" class="title" font-size="16">Four-tier architecture</text>
+  <text x="360" y="24" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#0f172a">Four-tier architecture</text>
 
-  <rect class="tier" x="40" y="44" width="640" height="72"/>
-  <text x="360" y="68" text-anchor="middle" class="label">Presentation  Next.js (App Router)</text>
-  <text x="360" y="88" text-anchor="middle" class="sub">Dashboard · Chatbot · Trends · PPT/Video export UI · Auth (Supabase)</text>
+  <rect x="40" y="44" width="640" height="72" rx="10" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+  <text x="360" y="68" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#0369a1">Presentation - Next.js (App Router)</text>
+  <text x="360" y="88" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#475569">Dashboard, Chatbot, Trends, PPT/Video UI, Auth (Supabase)</text>
 
-  <rect class="tier" x="40" y="132" width="640" height="72"/>
-  <text x="360" y="156" text-anchor="middle" class="label">Application  FastAPI</text>
-  <text x="360" y="176" text-anchor="middle" class="sub">Properties · Trends · Chatbot · Meetings · PPT exports · Redis cache</text>
+  <rect x="40" y="132" width="640" height="72" rx="10" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+  <text x="360" y="156" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#0369a1">Application - FastAPI</text>
+  <text x="360" y="176" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#475569">Properties, Trends, Chatbot, Meetings, PPT exports, Redis</text>
 
-  <rect class="tier" x="40" y="220" width="400" height="72"/>
-  <text x="240" y="244" text-anchor="middle" class="label">Data  PostgreSQL (Supabase)</text>
-  <text x="240" y="264" text-anchor="middle" class="sub">Listings · Profiles · Meetings · Embeddings</text>
+  <rect x="40" y="220" width="400" height="72" rx="10" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+  <text x="240" y="244" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#0369a1">Data - PostgreSQL (Supabase)</text>
+  <text x="240" y="264" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#475569">Listings, Profiles, Meetings, Embeddings</text>
 
-  <rect class="tier" x="460" y="220" width="220" height="72"/>
-  <text x="570" y="244" text-anchor="middle" class="label">Ingestion</text>
-  <text x="570" y="264" text-anchor="middle" class="sub">Scrappers ’ Supabase</text>
+  <rect x="460" y="220" width="220" height="72" rx="10" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+  <text x="570" y="244" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#0369a1">Ingestion</text>
+  <text x="570" y="264" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#475569">Scrappers to Supabase</text>
 
-  <rect class="ext" x="40" y="320" width="180" height="56"/>
-  <text x="130" y="344" text-anchor="middle" class="title">Zameen</text>
-  <text x="130" y="362" text-anchor="middle" class="sub">Listings</text>
+  <rect x="40" y="320" width="180" height="56" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="130" y="344" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#0f172a">Zameen</text>
+  <text x="130" y="362" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#475569">Listings</text>
 
-  <rect class="ext" x="240" y="320" width="180" height="56"/>
-  <text x="330" y="344" text-anchor="middle" class="title">Graana</text>
-  <text x="330" y="362" text-anchor="middle" class="sub">Listings</text>
+  <rect x="240" y="320" width="180" height="56" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="330" y="344" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#0f172a">Graana</text>
+  <text x="330" y="362" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#475569">Listings</text>
 
-  <rect class="ext" x="440" y="320" width="120" height="56"/>
-  <text x="500" y="344" text-anchor="middle" class="title">Lamudi</text>
-  <text x="500" y="362" text-anchor="middle" class="sub">Listings</text>
+  <rect x="440" y="320" width="120" height="56" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="500" y="344" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#0f172a">Lamudi</text>
+  <text x="500" y="362" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#475569">Listings</text>
 
-  <rect class="box" x="580" y="320" width="100" height="56"/>
-  <text x="630" y="352" text-anchor="middle" class="sub">OpenAI / RAG</text>
+  <rect x="580" y="320" width="100" height="56" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+  <text x="630" y="352" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#475569">OpenAI / RAG</text>
 
   <line x1="360" y1="116" x2="360" y2="132" stroke="#64748b" marker-end="url(#arrow)"/>
   <line x1="360" y1="204" x2="360" y2="220" stroke="#64748b" marker-end="url(#arrow)"/>
